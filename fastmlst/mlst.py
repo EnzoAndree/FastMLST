@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function
 from operator import itemgetter
 import pandas as pd
@@ -8,16 +7,11 @@ from fastmlst.update_mlst_kit import load_obj
 from collections import defaultdict
 from Bio.Blast.Applications import NcbiblastnCommandline
 from sys import exit
-from sys import version_info
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from gzip import open as gopen
-if version_info[0] < 3:
-    from StringIO import StringIO
-    from pathlib2 import Path # pip2 install pathlib2
-else:
-    from io import StringIO
-    from pathlib import Path
+from io import StringIO
+from pathlib import Path
 import gzip
 import bz2
 

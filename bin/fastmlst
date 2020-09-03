@@ -1,13 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# modular, faster, error proft extreme
-from __future__ import print_function
 import argparse
 import logging
 from sys import exit
 from sys import stderr
 from sys import stdout
-from sys import version_info
 from Bio import SeqIO
 from multiprocessing import Pool
 from multiprocessing import cpu_count
@@ -18,10 +13,7 @@ from itertools import repeat
 from fastmlst.mlst import MLST
 from codecs import decode
 from tqdm import tqdm  # pip3 install tqdm
-if version_info[0] < 3:
-    from pathlib2 import Path  # pip2 install pathlib2
-else:
-    from pathlib import Path
+from pathlib import Path
 
 def unescaped_str(arg_str):
     return decode(str(arg_str), 'unicode_escape')

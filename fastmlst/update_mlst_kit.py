@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import print_function
 import logging
 import xml.etree.ElementTree as ET
 from Bio import SeqIO
@@ -8,20 +5,13 @@ from pickle import dump
 from pickle import load
 from datetime import date
 from subprocess import PIPE
-from sys import version_info
 from subprocess import Popen
 from collections import defaultdict
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from tqdm import tqdm  # pip3 install tqdm
-try:
-    from urllib.request import urlretrieve
-except ImportError:
-    from urllib import urlretrieve
-if version_info[0] < 3:
-    from pathlib2 import Path  # pip2 install pathlib2
-else:
-    from pathlib import Path
+from urllib.request import urlretrieve
+from pathlib import Path
 
 logger = logging.getLogger('update_mlst')
 
