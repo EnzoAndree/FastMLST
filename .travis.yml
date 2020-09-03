@@ -1,27 +1,27 @@
 language: python
 matrix:
     include:
-        - python: 3.5
-          dist: focal
-          sudo: false
-        - python: 3.6
-          dist: focal
-          sudo: false
-        - python: 3.7
-          dist: focal
-          sudo: false
+        # - python: 3.5
+        #   dist: focal
+        #   sudo: false
+        # - python: 3.6
+        #   dist: focal
+        #   sudo: false
+        # - python: 3.7
+        #   dist: focal
+        #   sudo: false
         - python: 3.8
           dist: focal
           sudo: false
         - os: osx
           osx_image: xcode10.1
           language: shell
-        - os: osx
-          osx_image: xcode11.3
-          language: shell
-        - os: osx
-          osx_image: xcode12u
-          language: shell
+        # - os: osx
+        #   osx_image: xcode11.3
+        #   language: shell
+        # - os: osx
+        #   osx_image: xcode12
+        #   language: shell
 
 channels:
 - defaults
