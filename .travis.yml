@@ -1,18 +1,26 @@
 language: python
-
-python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
-  - "3.8"
-os:
-  - linux
-  - osx
+matrix:
+    include:
+        - python: 3.4
+          dist: trusty
+          sudo: false
+        - python: 3.5
+          dist: trusty
+          sudo: false
+        - python: 3.6
+          dist: trusty
+          sudo: false
+        - python: 3.7
+          dist: xenial
+          sudo: false
+        - python: 3.8
+          dist: xenial
+          sudo: false
 
 channels:
 - defaults
-- conda-forge
 - bioconda
+- conda-forge
 
 install:
   # We do this conditionally because it saves us some downloading if the
