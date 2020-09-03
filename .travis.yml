@@ -55,4 +55,4 @@ install:
   - ls -liar
 script: fastmlst -V
 after_success:
-  - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash $HOME/miniconda/conda_upload.sh
+  - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash conda_upload.sh
