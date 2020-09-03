@@ -1,0 +1,13 @@
+from setuptools import setup
+
+setup(name='fastmlst',
+    version='0.0.1',
+    description='A Fast Multilocus Sequence Typing scan against PubMLST typing schemes',
+    url='https://github.com/EnzoAndree/FastMLST',
+    author='Enzo Guerrero-Araya',
+    author_email='biologoenzo@gmail.com',
+    license='GPLv3',
+    packages=['fastmlst'],
+    install_requires=['tqdm', 'biopython'],
+    scripts=['bin/fastmlst'],
+    zip_safe=False)

@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# modular, faster, error proft extreme
+from __future__ import print_function
+import argparse
+import logging
+from sys import exit
+from sys import stderr
+from sys import stdout
+from sys import version_info
+from Bio import SeqIO
+from multiprocessing import Pool
+from multiprocessing import cpu_count
+from fastmlst.update_mlst_kit import pathdb
+from fastmlst.update_mlst_kit import load_obj
+from fastmlst.update_mlst_kit import necessary_file
+from itertools import repeat
+from fastmlst.mlst import MLST
+from codecs import decode
+from tqdm import tqdm  # pip3 install tqdm
+if version_info[0] < 3:
+    from pathlib2 import Path  # pip2 install pathlib2
+else:
+    from pathlib import Path
+
+def unescaped_str(arg_str):
+    return decode(str(arg_str), 'unicode_escape')
+
+
+def check_coverage_range(value):
+    fvalue = float(value)
+    if fvalue <= 0 or fvalue > 100:
+        raise argparse.ArgumentTypeError(
+            'The coverage velue must to be [0..100]'
+        )
+    return fvalue
+
+
+def check_identity_range(value):
+    fvalue = float(value)
+    if fvalue <= 0 or fvalue > 100:
+        raise argparse.ArgumentTypeError(
+            'The identity velue must to be [0..100]'
+        )
+    return fvalue
+
+
+def runMLST(margument):
+    genome, cov, ident, sep = margument
+    return MLST(genome, cov, ident, sep)
+
+
+
+if __name__ == '__main__':
+    V = '%(prog)s v0.0.1'
+    parser = argparse.ArgumentParser()
+    parser.add_argument(type=str, nargs='*', dest='genomes')
+    parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
+                        help='Number of threads to use (default {})'.
+                        format(cpu_count()))
+    parser.add_argument('-v', '--verbose', type=int, default=0,
+                        choices=[0, 1, 2],
+                        help='Verbose output level choices: [0, 1, 2]')
+    parser.add_argument('-s', '--separator', type=unescaped_str, default=',',
+                        help='Choose a character to use as a separator' +
+                        ' (default ,)')
+    parser.add_argument('-fo', '--fastaoutput', type=str, default='mlst.fasta',
+                        help='File name of the concatenated alleles output' +
+                        ' (default mlst.fasta)')
+    parser.add_argument('-to', '--tableoutput', type=str, default=stdout,
+                        help='File name of the MLST table output' +
+                        ' (default STDOUT)')
+    parser.add_argument('-cov', '--coverage', type=check_coverage_range,
+                        default=90,
+                        help='DNA %%Cov to report partial allele [?]' +
+                        ' (default 90%%)')
+    parser.add_argument('-pid', '--identity', type=check_identity_range,
+                        default=95,
+                        help='DNA %%Identity of full allelle to consider' +
+                        ' \'similar\' [~] (default 95%%)')
+    parser.add_argument('--update-mlst', action='store_true')
+    parser.add_argument('--fasta2line', action='store_true')
+    parser.add_argument('-n', '--novel', type=str)
+    parser.add_argument('-V', '--version', action='version',
+                        version=V)
+    args = parser.parse_args()
+    # Verbose?
+    formatter = logging.Formatter('%(levelname)s  %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+
+    if args.verbose == 0:
+        logging.basicConfig(level=logging.WARNING,
+                            format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
+                            datefmt='%H:%M:%S')
+        logger = logging.getLogger('fastMLST')
+    elif args.verbose == 1:
+        logging.basicConfig(level=logging.INFO,
+                            format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
+                            datefmt='%H:%M:%S')
+        logger = logging.getLogger('fastMLST')
+        logger.addHandler(ch)
+    elif args.verbose == 2:
+        logging.basicConfig(level=logging.DEBUG,
+                            format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
+                            datefmt='%H:%M:%S')
+        logger = logging.getLogger('fastMLST')
+        logger.addHandler(ch)
+    # Check for pubmlst
+    pathdb.mkdir(exist_ok=True, parents=True)
+    is_all_files = all(Path(str(pathdb) + '/' + f).is_file()
+                       for f in necessary_file)
+    # If update_mlst is true o any necesary file are missing update pubmlst
+    if args.update_mlst or not is_all_files:
+        from shutil import rmtree
+        from fastmlst.update_mlst_kit import update_mlstdb
+        rmtree(str(pathdb))
+        update_mlstdb(args.threads)
+        if args.update_mlst:
+            exit()
+    scheme_number = load_obj(str(pathdb) + '/scheme_number.pkl')
+    genome_mlst = []
+    if not args.genomes:
+        parser.print_help(stderr)
+        exit()
+    p = Pool(args.threads)
+    multipleargs = list(zip(args.genomes,
+                            repeat(args.coverage),
+                            repeat(args.identity),
+                            repeat(args.separator),
+                            ))
+    for result in tqdm(p.imap_unordered(runMLST, multipleargs),
+                       total=len(multipleargs),
+                       desc='Scanning Genomes using {} threads'.
+                       format(args.threads), unit='Genomes', leave=False):
+        genome_mlst.append(result)
+    p.close()
+    p.join()
+    # make only one fasta concat
+    fastaconcat = []
+    fastanovelconcat = []
+    str_alleles = ''
+    for genome in genome_mlst:
+        # only export if
+        # 1. Allele not contain Ns
+        # 2. No alleles missing
+        # 3. No contamination in genome
+        # if genome.blastresult\
+        #         and not genome.descarted\
+        #         and not genome.contamination\
+        #         and not genome.allelemissing:
+        if genome.blastresult:
+            if not genome.descarted\
+               and not genome.contamination\
+               and not genome.allelemissing:
+                fastaconcat.append(genome.concat_alleles)
+                if args.novel and genome.novel_alleles:
+                    for novelallele in genome.novel_alleles:
+                        genenovel = novelallele.split('~')[0]
+                        try:
+                            seq = genome.alleles[genenovel]
+                        except Exception as e:
+                            print(genome.alleles)
+                            print(genome.descarted)
+                            raise e
+                        seq.id = novelallele + '@' + genome.beautiname
+                        seq.description = ''
+                        fastanovelconcat.append(seq)
+            str_alleles += genome.str_st
+            str_alleles += '\n'
+    if args.fasta2line:
+        SeqIO.write(fastaconcat, args.fastaoutput, 'fasta-2line')
+        if args.novel:
+            SeqIO.write(fastanovelconcat, args.novel, 'fasta-2line')
+    else:
+        SeqIO.write(fastaconcat, args.fastaoutput, 'fasta')
+        if args.novel:
+            SeqIO.write(fastanovelconcat, args.novel, 'fasta')
+
+    # output formated
+    if type(args.tableoutput) == str:
+        print(str_alleles[:-1], file=open(args.tableoutput, 'w'))
+    else:
+        print(str_alleles[:-1], file=args.tableoutput)

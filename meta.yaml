@@ -1,0 +1,33 @@
+{% set name = "fastmlst" %}
+{% set version = "0.0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+channels:
+- conda-forge
+- defaults
+- bioconda
+
+source:
+  path: ./
+
+requirements:
+  build:
+    - python {{ python }}
+    - tqdm
+    - pandas
+    - blast
+    - setuptools
+    - biopython
+    - pathlib2
+
+  run:
+    - python
+    - tqdm
+    - pandas
+    - blast
+    - setuptools
+    - biopython
+    - pathlib2
