@@ -6,28 +6,24 @@ package:
   version: "{{ version }}"
 
 channels:
+- bioconda
 - conda-forge
 - defaults
-- bioconda
+
+build:
+    noarch: python
 
 source:
+  # url: https://github.com/EnzoAndree/FastMLST/archive/v{{ version }}.tar.gz
   path: ./
 
 requirements:
   build:
     - python {{ python }}
-    - tqdm
-    - pandas
-    - blast
-    - setuptools
-    - biopython
-    - pathlib2
 
   run:
     - python
     - tqdm
     - pandas
-    - blast
-    - setuptools
+    - blast>2.5
     - biopython
-    - pathlib2

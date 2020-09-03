@@ -80,7 +80,7 @@ def update_mlstdb(threads):
     for result in tqdm(t.imap_unordered(download_fasta, datadb.values()),
                        total=len(datadb.values()),
                        desc='Downloading Schemes using {} threads'.
-                       format(cpu_count()), unit='Schemes', leave=True):
+                       format(threads), unit='Schemes', leave=True):
         genome_mlst.append(result)
     t.close()
     t.join()
