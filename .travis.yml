@@ -2,21 +2,23 @@ language: python
 matrix:
     include:
         - python: 3.4
-          dist: trusty
+          dist: focal
           sudo: false
         - python: 3.5
-          dist: trusty
+          dist: focal
           sudo: false
         - python: 3.6
-          dist: trusty
+          dist: focal
           sudo: false
         - python: 3.7
-          dist: xenial
+          dist: focal
           sudo: false
         - python: 3.8
-          dist: xenial
+          dist: focal
           sudo: false
-
+os:
+  - linux
+  - osx
 channels:
 - defaults
 - bioconda
