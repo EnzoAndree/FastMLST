@@ -30,6 +30,10 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
+  - conda config --add channels defaults
+  - conda config --add channels bioconda
+  - conda config --add channels conda-forge
+
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION tqdm pandas biopython blast
   - conda activate test-environment
