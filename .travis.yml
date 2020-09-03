@@ -1,9 +1,6 @@
 language: python
 matrix:
     include:
-        - python: 3.4
-          dist: focal
-          sudo: false
         - python: 3.5
           dist: focal
           sudo: false
@@ -16,6 +13,15 @@ matrix:
         - python: 3.8
           dist: focal
           sudo: false
+        - name: "Python 3.6.5 on macOS"
+          os: osx
+          osx_image: xcode9.4  # Python 3.6.5 running on macOS 10.13
+          language: shell  # 'language: python' is an error on Travis CI macOS
+        - name: "Python 3.7.3 on macOS"
+          os: osx
+          osx_image: xcode10.2  # Python 3.7.3 running on macOS 10.13
+          language: shell  # 'language: python' is an error on Travis CI macOS
+
 os:
   - linux
   - osx
