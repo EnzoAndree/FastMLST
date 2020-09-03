@@ -27,3 +27,6 @@ requirements:
     - pandas
     - blast>2.5
     - biopython
+test:
+  commands:
+    - {{ name|lower }} -V
