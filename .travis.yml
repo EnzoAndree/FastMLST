@@ -10,9 +10,9 @@ os:
   - osx
 
 channels:
+- defaults
 - bioconda
 - conda-forge
-- defaults
 
 install:
   # We do this conditionally because it saves us some downloading if the
