@@ -11,8 +11,8 @@ os:
 
 channels:
 - defaults
-- bioconda
 - conda-forge
+- bioconda
 
 install:
   # We do this conditionally because it saves us some downloading if the
@@ -38,3 +38,4 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION tqdm pandas biopython blast
   - conda activate test-environment
   - python setup.py install
+script: fastmlst -V
