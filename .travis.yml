@@ -49,7 +49,10 @@ install:
   - conda config --add channels conda-forge
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION tqdm pandas biopython blast
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION tqdm pandas biopython
   - conda activate test-environment
   - python setup.py install
+  - ls -liar
 script: fastmlst -V
+after_success:
+  - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash $HOME/miniconda/conda_upload.sh
