@@ -58,7 +58,7 @@ $ fastmlst cdiff_refferences/RT078_CDM120.fasta > mlst.csv
 ```
 Both options generate the `mlst.csv` file containing the FastMLST result.
 
-FastMLST will always try to generate a file in FASTA format (mlst.fasta by default) with the alleles concatenated in alphabetical order from the MLST scheme. If any genome is not found in this result, it means that (1) Allele contain Ns, (2) alleles missing or (3) contamination (multiple alleles for one genom). Optionally the name could be modified with `-fo` option:
+FastMLST will always try to generate a file in FASTA format (mlst.fasta by default) with the alleles concatenated in alphabetical order from the MLST scheme. If any genome is not found in this result, it means that (1) Allele contain Ns, (2) alleles missing or (3) contamination (multiple alleles for one genome). Optionally the name could be modified with `-fo` option:
 ```
 $ fastmlst cdiff_refferences/RT078_CDM120.fasta
 ```
