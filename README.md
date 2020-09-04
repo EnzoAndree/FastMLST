@@ -124,6 +124,6 @@ optional arguments:
 # Citation
 If you use FastMLST in your publication, I could recommend the following sentence in methodology:
 
-The The ST determination was done using FastMLST (https://github.com/EnzoAndree/FastMLST) in combination with the [PubMLST] database (https://doi.org/10.12688/wellcomeopenres.14826.1). The alleles of the scheme were concatenated in alphabetical order.
+The ST determination was done using FastMLST (https://github.com/EnzoAndree/FastMLST) in combination with the [PubMLST] database (https://doi.org/10.12688/wellcomeopenres.14826.1). The alleles of the scheme were concatenated in alphabetical order.
 
 It is currently unpublished, but we are doing our best to get this paper out.
