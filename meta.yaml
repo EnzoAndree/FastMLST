@@ -1,5 +1,5 @@
 {% set name = "fastmlst" %}
-{% set version = "0.0.3" %}
+{% set version = "0.0.4" %}
 
 package:
   name: "{{ name|lower }}"
@@ -22,7 +22,7 @@ requirements:
     - python {{ python }}
 
   run:
-    - python
+    - python>=3
     - tqdm
     - pandas
     - blast>=2.10

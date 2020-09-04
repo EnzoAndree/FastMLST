@@ -1,4 +1,3 @@
-from __future__ import print_function
 from operator import itemgetter
 import pandas as pd
 from fastmlst.update_mlst_kit import pathdb
@@ -201,7 +200,6 @@ class MLST(object):
                     if row[1]['number'] not in\
                             self.score['scheme'][row[1]['gene']] or\
                             row[1]['coverage'] < self.coverage:
-                        # print('lol')
                         continue
                     if row[1]['sstrand'] == 'plus':
                         if row[1]['slen'] == row[1]['send']:
