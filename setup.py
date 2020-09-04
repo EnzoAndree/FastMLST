@@ -8,5 +8,6 @@ setup(name='fastmlst',
     author_email='biologoenzo@gmail.com',
     license='GPLv3',
     packages=['fastmlst'],
+    install_requires=['tqdm', 'pandas', 'biopython'],
     scripts=['bin/fastmlst'],
     zip_safe=False)
