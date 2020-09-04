@@ -44,7 +44,7 @@ def runMLST(margument):
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.2'
+    V = '%(prog)s v0.0.3'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -70,9 +70,12 @@ if __name__ == '__main__':
                         default=95,
                         help='DNA %%Identity of full allelle to consider' +
                         ' \'similar\' [~] (default 95%%)')
-    parser.add_argument('--update-mlst', action='store_true')
-    parser.add_argument('--fasta2line', action='store_true')
-    parser.add_argument('-n', '--novel', type=str)
+    parser.add_argument('--update-mlst', action='store_true',
+                        help='Perform an update of the PubMLST database')
+    parser.add_argument('--fasta2line', action='store_true',
+                        help='The fasta files will be in fasta2line format')
+    parser.add_argument('-n', '--novel', type=str,
+                        help='File name of the novel alleles')
     parser.add_argument('-V', '--version', action='version',
                         version=V)
     args = parser.parse_args()
