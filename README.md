@@ -115,9 +115,10 @@ optional arguments:
                         DNA %Cov to report partial allele [?] (default 90%)
   -pid IDENTITY, --identity IDENTITY
                         DNA %Identity of full allelle to consider 'similar' [~] (default 95%)
-  --update-mlst
-  --fasta2line
+  --update-mlst         Perform an update of the PubMLST database
+  --fasta2line          The fasta files will be in fasta2line format
   -n NOVEL, --novel NOVEL
+                        File name of the novel alleles
   -V, --version         show program's version number and exit
 ```
 # Citation
