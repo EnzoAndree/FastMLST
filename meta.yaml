@@ -1,5 +1,6 @@
-{% set name = "fastmlst" %}
+{% set name = "FastMLST" %}
 {% set version = "0.0.4" %}
+{% set user = "EnzoAndree" %}
 
 package:
   name: "{{ name|lower }}"
@@ -14,7 +15,7 @@ build:
     noarch: python
 
 source:
-  url: https://github.com/EnzoAndree/FastMLST/archive/v{{ version }}.tar.gz
+  url: https://github.com/{{ user }}/{{ name }}/archive/v{{ version }}.tar.gz
   # path: ./
 
 requirements:
@@ -25,8 +26,11 @@ requirements:
     - python>=3
     - tqdm
     - pandas
-    - blast>=2.10
+    - blast>=2.7
     - biopython
 test:
   commands:
     - {{ name|lower }} -V
+
+about:
+  home: https://github.com/{{ user }}/{{ name }}
