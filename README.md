@@ -18,7 +18,7 @@ It is expected that all dependencies will be resolved when using conda for insta
 * Biopython
 * tqdm
 * pandas
-* NCBI BLAST+ >= 2.9.0
+* NCBI BLAST+
 # Quick Start
 ```
 $ fastmlst cdiff_refferences/RT078_CDM120.fasta
