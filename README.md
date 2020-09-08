@@ -72,7 +72,7 @@ $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta
 Symbol | Meaning | Length | Identity
 ---   | --- | --- | ---
 `n`   | exact intact allele                   | 100%            | 100%
-`~n`  | novel full length allele similar to n | 100%            | &ge; `--pid`
+`~n`  | novel full length allele similar to n | 100%            | &ge; `-pid`
 `n?`  | partial match to known allele         | &ge; `-cov` | &ge; `-pid`
 `-`   | allele missing                        | &lt; `-cov` | &lt; `-pid`
 `n,m` | multiple alleles                      | &nbsp;          | &nbsp;
