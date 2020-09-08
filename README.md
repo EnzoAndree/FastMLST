@@ -7,8 +7,10 @@ FastMLST is a high speed stand alone script wrote in Python3, which takes assemb
 # Installation
 Currently the only way to install this script is using Conda (soon available in Bioconda).
 ```
-conda config --add channels enzoandree
-conda install -c enzoandree fastmlst
+conda config --add channels defaults
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda install fastmlst
 ```
 ## Dependencies
 It is expected that all dependencies will be resolved when using conda for installation.
