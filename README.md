@@ -5,10 +5,12 @@ A Fast Multilocus Sequence Typing scan against PubMLST typing schemes.
 # Introduction
 FastMLST is a high speed stand alone script wrote in Python3, which takes assemblies in FASTA format (gzipped is also allowed) and determines its ST according to MLST schemes defined in [PubMLST](https://doi.org/10.12688/wellcomeopenres.14826.1). The main advantage over other ST determination programs is that FastMLST allows the generation of a FASTA file containing the concatenated alleles for all analyzed genomes ready to be aligned and used in phylogenetic inference.
 # Installation
-Currently the only way to install this script is using Conda (soon available in Bioconda).
+Currently the only way to install this script is using Conda.
 ```
-conda config --add channels enzoandree
-conda install -c enzoandree fastmlst
+conda config --add channels defaults
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda install fastmlst
 ```
 ## Dependencies
 It is expected that all dependencies will be resolved when using conda for installation.
@@ -16,7 +18,7 @@ It is expected that all dependencies will be resolved when using conda for insta
 * Biopython
 * tqdm
 * pandas
-* NCBI BLAST+ >= 2.9.0
+* NCBI BLAST+
 # Quick Start
 ```
 $ fastmlst cdiff_refferences/RT078_CDM120.fasta
@@ -70,7 +72,7 @@ $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta
 Symbol | Meaning | Length | Identity
 ---   | --- | --- | ---
 `n`   | exact intact allele                   | 100%            | 100%
-`~n`  | novel full length allele similar to n | 100%            | &ge; `--pid`
+`~n`  | novel full length allele similar to n | 100%            | &ge; `-pid`
 `n?`  | partial match to known allele         | &ge; `-cov` | &ge; `-pid`
 `-`   | allele missing                        | &lt; `-cov` | &lt; `-pid`
 `n,m` | multiple alleles                      | &nbsp;          | &nbsp;
