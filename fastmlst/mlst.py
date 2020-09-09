@@ -183,7 +183,14 @@ class MLST(object):
         STlist = Path(str(scheme_dir) + '/' + self.scheme + '.txt')
         dfSTlist = pd.read_csv(str(STlist), sep='\t', index_col=0)
         for key, value in self.score['scheme'].items():
-            dfSTlist = dfSTlist.loc[dfSTlist[key] == int(value)]
+            if '|' in value:
+                value = list(set(value.split('|')))
+                if len(value) == 1:
+                    dfSTlist = dfSTlist.loc[dfSTlist[key] == int(value[0])]
+                else:
+                    return '-'
+            else:
+                dfSTlist = dfSTlist.loc[dfSTlist[key] == int(value)]
         if len(dfSTlist) == 1:
             return dfSTlist
         elif len(dfSTlist) == 0:
