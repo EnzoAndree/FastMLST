@@ -80,7 +80,15 @@ class MLST(object):
             if '-' in value or '?' in value:
                 self.allelemissing = True
             elif '|' in value:
-                self.contamination = True
+                # Check if is a duplication of same reported alleles
+                if '~' in value:
+                    self.contamination = True
+                else:
+                    valuelist = value.split('|')
+                    if len(set(valuelist)) == 1:
+                        pass
+                    else:
+                        self.contamination = True
             elif '~' in value:
                 self.novel_alleles.append(locus + value)
 
