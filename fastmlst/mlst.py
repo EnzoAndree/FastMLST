@@ -109,7 +109,7 @@ class MLST(object):
         logger.debug(blastn_cline)
         out, err = blastn_cline(stdin=self.fasta_opened)
         if out == '':
-            logger.warning('There is no result for ', self.blastn_cli)
+            logger.warning('There is no result for ', self.blastn_cli, ' < ', self.fasta_opened)
             return None
         self.blastresult = True
         blastfiltred = self.blast_filter(out)
