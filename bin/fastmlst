@@ -154,7 +154,6 @@ if __name__ == '__main__':
                 fastaconcat.append(genome.concat_alleles)
                 if args.novel and genome.novel_alleles:
                     for novelallele in genome.novel_alleles:
-                        print(novelallele)
                         genenovel = split_namefromcode.search(novelallele)
                         # if '~' in novelallele:
                         #     genenovel = novelallele.split('~')[0]
