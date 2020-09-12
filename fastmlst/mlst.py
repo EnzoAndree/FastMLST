@@ -114,7 +114,7 @@ class MLST(object):
         logger.debug(blastn_cline)
         out, err = blastn_cline(stdin=self.fasta_opened)
         if out == '':
-            logger.warning('There is no result for ', self.blastn_cli, ' < ', self.fasta_opened)
+            logger.warning('There is no result for ', self.blastn_cli, ' < ', self.fasta)
             return None
         self.blastresult = True
         blastfiltred = self.blast_filter(out)
@@ -208,7 +208,7 @@ class MLST(object):
         else:
             logger.error('If you got here, congratulations, ' +
                          ' you found a place in maintenance STassignment()!')
-            logger.error(dfSTlist, self.blastn_cli, ' < ', self.fasta_opened)
+            logger.error(dfSTlist, self.blastn_cli, ' < ', self.fasta)
             logger.error(self.score['scheme'])
 
     def mlstex(self, ):
