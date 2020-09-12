@@ -66,7 +66,7 @@ class MLST(object):
             elif not self.allelemissing and\
                     self.novel_alleles and\
                     not self.contamination:
-                ST = 'new'
+                ST = 'new_alleles'
             else:
                 ST = '-'
             self.name_alleles = self.scheme_number[self.scheme]
@@ -204,7 +204,7 @@ class MLST(object):
         if len(dfSTlist) == 1:
             return dfSTlist
         elif len(dfSTlist) == 0:
-            return 'new'
+            return 'new_ST'
         else:
             logger.error('If you got here, congratulations, ' +
                          ' you found a place in maintenance STassignment()!')
