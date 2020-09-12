@@ -16,11 +16,4 @@ jobs:
           command: |
             python --version
             python setup.py install --user
-
-workflows:
-  main:
-    jobs:
-      - run:
-          command: fastmlst -V
-          name: Test
-
+            fastmlst -V
