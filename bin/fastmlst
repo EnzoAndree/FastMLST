@@ -57,7 +57,7 @@ if __name__ == '__main__':
                         help='Verbose output level choices: [0, 1, 2]')
     parser.add_argument('-s', '--separator', type=unescaped_str, default=',',
                         help='Choose a character to use as a separator' +
-                        ' (default ,)')
+                        ' (default ",")')
     parser.add_argument('-fo', '--fastaoutput', type=str, default='mlst.fasta',
                         help='File name of the concatenated alleles output' +
                         ' (default mlst.fasta)')
