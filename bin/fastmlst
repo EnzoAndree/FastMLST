@@ -46,7 +46,7 @@ def runMLST(margument):
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.5b'
+    V = '%(prog)s v0.0.5c'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -65,9 +65,9 @@ if __name__ == '__main__':
                         help='File name of the MLST table output' +
                         ' (default STDOUT)')
     parser.add_argument('-cov', '--coverage', type=check_coverage_range,
-                        default=90,
-                        help='DNA %%Cov to report partial allele [?]' +
-                        ' (default 90%%)')
+                        default=99,
+                        help='DNA %%Cov to report high quality partial allele [?]' +
+                        ' (default 99%%)')
     parser.add_argument('-pid', '--identity', type=check_identity_range,
                         default=95,
                         help='DNA %%Identity of full allelle to consider' +
@@ -115,7 +115,6 @@ if __name__ == '__main__':
         update_mlstdb(args.threads)
         if args.update_mlst:
             exit()
-    scheme_number = load_obj(str(pathdb) + '/scheme_number.pkl')
     genome_mlst = []
     if not args.genomes:
         parser.print_help(stderr)

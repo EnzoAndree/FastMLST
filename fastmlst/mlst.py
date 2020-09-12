@@ -76,25 +76,30 @@ class MLST(object):
             self.alleles = None
             self.concat_alleles = self.mlstex()
             self.str_st = self.str_allelic_profile()
+        # Release Ram!
+        del self.fasta_opened
+        del self.scheme_number
+        del self.blast
 
     def __repr__(self,):
         return '{}–ST: {}'.format(self.beautiname, self.STnumber)
 
     def QCflags(self, ):
         for locus, value in self.score['scheme'].items():
-            if '-' in value or '?' in value:
+            if '-' in value:
                 self.allelemissing = True
-            elif '|' in value:
-                # Check if is a duplication of same reported alleles
-                if '~' in value:
-                    self.contamination = True
-                else:
-                    valuelist = value.split('|')
-                    if len(set(valuelist)) == 1:
-                        pass
-                    else:
-                        self.contamination = True
-            elif '~' in value:
+            # mlst.py must check for contamination in mlstex()
+            # elif '|' in value:
+            #     # Check if is a duplication of same reported alleles
+            #     if '~' in value:
+            #         self.contamination = True
+            #     else:
+            #         valuelist = value.split('|')
+            #         if len(set(valuelist)) == 1:
+            #             pass
+            #         else:
+            #             self.contamination = True
+            elif '~' in value or '?' in value:
                 self.novel_alleles.append(locus + value)
 
 
@@ -121,30 +126,30 @@ class MLST(object):
         dfblast = pd.read_csv(StringIO(blast_out), sep='\t', names=header)
         toint = ['slen', 'sstart', 'send', 'length', 'nident', 'gaps',
                  'qstart', 'qend']
-        dfblast['coverage'] = dfblast.length / dfblast.slen
+        dfblast['coverage'] = (dfblast.slen - dfblast.gaps) / dfblast.length
         dfblast['identity'] = dfblast.nident / (dfblast.slen + dfblast.gaps)
         dfblast[toint] = dfblast[toint].astype(int)
-        filtred = dfblast.loc[dfblast['coverage'] >= 0]
-        if len(filtred) == 0:
+        dfblast.update(dfblast.loc[dfblast['coverage'] >= 0])
+        if len(dfblast) == 0:
             # there is no result
             return (self.beautiname, None, None, None, None, None, None, None,
                     None, None)
         else:
-            filtred = filtred.join(
-                filtred['sseqid'].str.split('.', 1, expand=True).
+            dfblast = dfblast.join(
+                dfblast['sseqid'].str.split('.', 1, expand=True).
                 rename(columns={0: 'scheme', 1: 'genenumber'}))
-            filtred = filtred.join(
-                filtred['genenumber'].str.rsplit('_', 1, expand=True).
+            dfblast = dfblast.join(
+                dfblast['genenumber'].str.rsplit('_', 1, expand=True).
                 rename(columns={0: 'gene', 1: 'number'}))
-            filtred = filtred.drop(['sseqid', 'genenumber'], axis=1)
-            filtred['genome_id'] = self.beautiname
-            filtred.index = filtred['genome_id']
-            filtred = filtred[['scheme', 'gene', 'number', 'slen', 'sstrand',
+            dfblast = dfblast.drop(['sseqid', 'genenumber'], axis=1)
+            dfblast['genome_id'] = self.beautiname
+            dfblast.index = dfblast['genome_id']
+            dfblast = dfblast[['scheme', 'gene', 'number', 'slen', 'sstrand',
                                'sstart', 'send', 'length', 'nident', 'gaps',
                                'coverage', 'identity', 'qseqid', 'qstart',
                                'qend']]
-            filtred.sort_index(inplace=True)
-            return filtred
+            dfblast.sort_index(inplace=True)
+            return dfblast
 
     def str_allelic_profile(self, ):
         if not isinstance(self.ST, pd.DataFrame):
@@ -203,7 +208,7 @@ class MLST(object):
         else:
             logger.error('If you got here, congratulations, ' +
                          ' you found a place in maintenance STassignment()!')
-            logger.error(dfSTlist, self.blastn_cli)
+            logger.error(dfSTlist, self.blastn_cli, ' < ', self.fasta_opened)
             logger.error(self.score['scheme'])
 
     def mlstex(self, ):
@@ -261,7 +266,16 @@ class MLST(object):
                                                             row[1]['gene'],
                                                             start, end)
                     record_fasta = SeqRecord(seq, id=identificator)
-                    fasta_output[row[1]['gene']] = record_fasta
+                    # Check for equal gene name and diferent sequence (e.g. conaminations)
+                    if row[1]['gene'] in fasta_output:
+                        # gene name already in the output
+                        if fasta_output[row[1]['gene']].seq == record_fasta.seq:
+                            # Ok, it is the same allele
+                            pass
+                        else:
+                            self.contamination = True
+                    else:
+                        fasta_output[row[1]['gene']] = record_fasta
             elif isinstance(pd_blast, pd.Series):
                 logger.error('If you got here, congratulations, ' +
                              ' you found a place in maintenance mlstex()!')
