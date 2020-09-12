@@ -280,7 +280,7 @@ class MLST(object):
                 logger.error('If you got here, congratulations, ' +
                              ' you found a place in maintenance mlstex()!')
         self.alleles = fasta_output
-        if self.number_alleles != len(self.alleles):
+        if self.number_alleles > len(self.alleles):
             self.descarted = True
         header = self.beautiname + ' '
         concatenatedseq = ''

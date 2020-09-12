@@ -16,6 +16,7 @@ from fastmlst.mlst import MLST
 from codecs import decode
 from tqdm import tqdm  # pip3 install tqdm
 from pathlib import Path
+from re import compile
 
 def unescaped_str(arg_str):
     return decode(str(arg_str), 'unicode_escape')
@@ -85,6 +86,7 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(levelname)s  %(message)s')
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
+    split_namefromcode = compile(r'(?P<gene>[a-zA-Z]+)(?P<novel>~?)(?P<number>\d+)(?P<partial>\??)')
 
     if args.verbose == 0:
         logging.basicConfig(level=logging.WARNING,
@@ -152,16 +154,18 @@ if __name__ == '__main__':
                 fastaconcat.append(genome.concat_alleles)
                 if args.novel and genome.novel_alleles:
                     for novelallele in genome.novel_alleles:
-                        if '~' in novelallele:
-                            genenovel = novelallele.split('~')[0]
-                        elif '?' in novelallele:
-                            genenovel = novelallele.split('?')[0]
-                        else:
-                            print(genome.alleles)
-                            print(genome.descarted)
-                            exit()
+                        print(novelallele)
+                        genenovel = split_namefromcode.search(novelallele)
+                        # if '~' in novelallele:
+                        #     genenovel = novelallele.split('~')[0]
+                        # elif '?' in novelallele:
+                        #     genenovel = novelallele.split('?')[0]
+                        # else:
+                        #     print(genome.alleles)
+                        #     print(genome.descarted)
+                        #     exit()
                         try:
-                            seq = genome.alleles[genenovel]
+                            seq = genome.alleles[genenovel.group('gene')]
                         except Exception as e:
                             print(genome.alleles)
                             print(genome.descarted)
