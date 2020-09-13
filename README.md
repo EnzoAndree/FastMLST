@@ -1,12 +1,12 @@
-![Travis (.org) branch](https://img.shields.io/travis/EnzoAndree/FastMLST/master)
-![GitHub](https://img.shields.io/github/license/EnzoAndree/FastMLST)
+![Conda](https://img.shields.io/conda/pn/bioconda/fastmlst)![CircleCI](https://img.shields.io/circleci/build/github/EnzoAndree/FastMLST/master)![GitHub](https://img.shields.io/github/license/EnzoAndree/FastMLST)
+
 # FastMLST
-A Fast Multilocus Sequence Typing scan against PubMLST typing schemes.
+A Fast Multilocus Sequence Typing scan against PubMLST typing schemes coupled with the allele concatenation.
 # Introduction
 FastMLST is a high speed stand alone script wrote in Python3, which takes assemblies in FASTA format (gzipped is also allowed) and determines its ST according to MLST schemes defined in [PubMLST](https://doi.org/10.12688/wellcomeopenres.14826.1). The main advantage over other ST determination programs is that FastMLST allows the generation of a FASTA file containing the concatenated alleles for all analyzed genomes ready to be aligned and used in phylogenetic inference.
 # Installation
 Currently the only way to install this script is using Conda.
-```
+```bash
 conda config --add channels defaults
 conda config --add channels conda-forge
 conda config --add channels bioconda
@@ -71,11 +71,11 @@ $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta
 ## Output symbology
 Symbol | Meaning | Length | Identity
 ---   | --- | --- | ---
-`n`   | exact intact allele                   | 100%            | 100%
-`~n`  | novel full length allele similar to n | 100%            | &ge; `-pid`
-`n?`  | partial match to known allele         | &ge; `-cov` | &ge; `-pid`
-`-`   | allele missing                        | &lt; `-cov` | &lt; `-pid`
-`n,m` | multiple alleles                      | &nbsp;          | &nbsp;
+`n`   | Exact intact allele                   | 100%            | 100%
+`~n`  | Novel full length allele similar to n | 100%            | &ge; `-pid`
+`n?`  | Partial match to known allele        | &ge; `-cov` | &ge; `-pid`
+`-`   | Allele missing (or allele containing Ns) | &lt; `-cov` | &lt; `-pid`
+`n,m` | Multiple alleles                     | &nbsp;          | &nbsp;
 ## Scoring system
 FastMLST uses a scoring system to determine the scheme to be employed similar to that proposed by [Tseemann](https://github.com/tseemann/mlst). The score for a scheme with N alleles is as follows:
 
@@ -94,8 +94,8 @@ $ fastmlst --update-mlst -t 24
 ```
 # Complete usage Options
 ```
-usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst]
-                [--fasta2line] [-n NOVEL] [-V]
+usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst] [--fasta2line]
+                [-n NOVEL] [-V]
                 [genomes [genomes ...]]
 
 positional arguments:
@@ -108,13 +108,13 @@ optional arguments:
   -v {0,1,2}, --verbose {0,1,2}
                         Verbose output level choices: [0, 1, 2]
   -s SEPARATOR, --separator SEPARATOR
-                        Choose a character to use as a separator (default ,)
+                        Choose a character to use as a separator (default ",")
   -fo FASTAOUTPUT, --fastaoutput FASTAOUTPUT
                         File name of the concatenated alleles output (default mlst.fasta)
   -to TABLEOUTPUT, --tableoutput TABLEOUTPUT
                         File name of the MLST table output (default STDOUT)
   -cov COVERAGE, --coverage COVERAGE
-                        DNA %Cov to report partial allele [?] (default 90%)
+                        DNA %Cov to report high quality partial allele [?] (default 99%)
   -pid IDENTITY, --identity IDENTITY
                         DNA %Identity of full allelle to consider 'similar' [~] (default 95%)
   --update-mlst         Perform an update of the PubMLST database
