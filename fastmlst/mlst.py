@@ -60,13 +60,11 @@ class MLST(object):
             self.QCflags()
             if not self.allelemissing and\
                     not self.novel_alleles and\
-                    not self.descarted and\
                     not self.contamination:
                 self.ST = self.STassignment()
             # if novel alleles, is new ST by default
             elif not self.allelemissing and\
                     self.novel_alleles and\
-                    not self.descarted and\
                     not self.contamination:
                 self.ST = 'new_alleles'
             else:
@@ -77,7 +75,8 @@ class MLST(object):
             self.alleles = None
             self.concat_alleles = self.mlstex()
             if self.descarted:
-                self.ST += ' (Ns)'
+                # If any allele has Ns or is broken in 2 contigs, do not determine STs
+                self.ST = '-'
             self.str_st = self.str_allelic_profile()
 
         # Release Ram!
