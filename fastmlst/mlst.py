@@ -309,7 +309,7 @@ class MLST(object):
             loci = self.scheme_number[scheme]
             N = len(loci)
             blast_scheme = self.blast[(self.blast.gene.isin(loci)) &
-                                      (self.blast.scheme == scheme)]
+                                      (self.blast.scheme == scheme)].copy()
             blast_scheme.sort_values(by=['coverage', 'length', 'nident'],
                                      ascending=False, inplace=True)
             for locus in loci:
