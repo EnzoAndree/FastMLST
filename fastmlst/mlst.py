@@ -126,10 +126,10 @@ class MLST(object):
         dfblast = pd.read_csv(StringIO(blast_out), sep='\t', names=header)
         toint = ['slen', 'sstart', 'send', 'length', 'nident', 'gaps',
                  'qstart', 'qend']
-        dfblast['coverage'] = (dfblast.slen - dfblast.gaps) / dfblast.length
-        dfblast['identity'] = dfblast.nident / (dfblast.slen + dfblast.gaps)
+        dfblast['coverage'] = dfblast.length / (dfblast.slen - dfblast.gaps)
+        dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen
         dfblast[toint] = dfblast[toint].astype(int)
-        dfblast.update(dfblast.loc[dfblast['coverage'] >= 0])
+        # dfblast.update(dfblast.loc[dfblast['coverage'] >= 0])
         if len(dfblast) == 0:
             # there is no result
             return (self.beautiname, None, None, None, None, None, None, None,
@@ -308,10 +308,10 @@ class MLST(object):
             rank_list[scheme]['scheme'] = defaultdict()
             loci = self.scheme_number[scheme]
             N = len(loci)
-            blast_scheme_ = self.blast[(self.blast.gene.isin(loci)) &
+            blast_scheme = self.blast[(self.blast.gene.isin(loci)) &
                                       (self.blast.scheme == scheme)]
-            blast_scheme = blast_scheme_.sort_values(
-                by=['coverage', 'length', 'nident'], ascending=False)
+            blast_scheme.sort_values(by=['coverage', 'length', 'nident'],
+                                     ascending=False, inplace=True)
             for locus in loci:
                 row = blast_scheme[blast_scheme.gene == locus]
                 if len(row) == 0:
