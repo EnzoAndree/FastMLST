@@ -58,25 +58,29 @@ class MLST(object):
             self.novel_alleles = []
             self.scoring()
             self.QCflags()
-            self.concat_alleles = self.mlstex()
             if not self.allelemissing and\
                     not self.novel_alleles and\
                     not self.descarted and\
                     not self.contamination:
-                ST = self.STassignment()
+                self.ST = self.STassignment()
             # if novel alleles, is new ST by default
             elif not self.allelemissing and\
                     self.novel_alleles and\
                     not self.descarted and\
                     not self.contamination:
-                ST = 'new_alleles'
+                self.ST = 'new_alleles'
             else:
-                ST = '-'
+                self.ST = '-'
             self.name_alleles = self.scheme_number[self.scheme]
             self.number_alleles = len(self.name_alleles)
-            self.ST = ST
             self.STnumber = None
             self.alleles = None
+            self.concat_alleles = self.mlstex()
+            if not self.allelemissing and\
+                    not self.novel_alleles and\
+                    self.descarted and\
+                    not self.contamination:
+                self.ST = '-'
             self.str_st = self.str_allelic_profile()
 
         # Release Ram!
