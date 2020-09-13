@@ -77,7 +77,11 @@ class MLST(object):
             self.STnumber = None
             self.alleles = None
             self.concat_alleles = self.mlstex()
+            # Check if allele descarted
+            if self.descarted:
+                self.ST = 'Ns'
             self.str_st = self.str_allelic_profile()
+
         # Release Ram!
         del self.fasta_opened
         del self.scheme_number
