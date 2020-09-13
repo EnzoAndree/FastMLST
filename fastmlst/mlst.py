@@ -260,6 +260,7 @@ class MLST(object):
                         seq = record.seq[start:end].reverse_complement()
                     if seq.count('N') > 0 or not \
                             self.is_context_complete(len(record), start, end):
+                        self.descarted = True
                         continue
                     identificator = '{}|{}|{}|{}_{}'.format(self.beautiname,
                                                             record.id,
