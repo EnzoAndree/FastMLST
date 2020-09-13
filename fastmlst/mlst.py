@@ -80,7 +80,7 @@ class MLST(object):
                     not self.novel_alleles and\
                     self.descarted and\
                     not self.contamination:
-                self.ST = '-'
+                self.ST = 'Ns'
             self.str_st = self.str_allelic_profile()
 
         # Release Ram!
