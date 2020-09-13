@@ -60,11 +60,13 @@ class MLST(object):
             self.QCflags()
             if not self.allelemissing and\
                     not self.novel_alleles and\
+                    not self.descarted and\
                     not self.contamination:
                 ST = self.STassignment()
             # if novel alleles, is new ST by default
             elif not self.allelemissing and\
                     self.novel_alleles and\
+                    not self.descarted and\
                     not self.contamination:
                 ST = 'new_alleles'
             else:
