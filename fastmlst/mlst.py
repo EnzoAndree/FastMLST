@@ -58,6 +58,7 @@ class MLST(object):
             self.novel_alleles = []
             self.scoring()
             self.QCflags()
+            self.concat_alleles = self.mlstex()
             if not self.allelemissing and\
                     not self.novel_alleles and\
                     not self.descarted and\
@@ -76,10 +77,6 @@ class MLST(object):
             self.ST = ST
             self.STnumber = None
             self.alleles = None
-            self.concat_alleles = self.mlstex()
-            # Check if allele descarted
-            if self.descarted:
-                self.ST = 'Ns'
             self.str_st = self.str_allelic_profile()
 
         # Release Ram!
@@ -287,8 +284,6 @@ class MLST(object):
                 logger.error('If you got here, congratulations, ' +
                              ' you found a place in maintenance mlstex()!')
         self.alleles = fasta_output
-        if self.number_alleles > len(self.alleles):
-            self.descarted = True
         header = self.beautiname + ' '
         concatenatedseq = ''
         for genename in sorted(self.alleles):
