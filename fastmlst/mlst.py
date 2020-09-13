@@ -76,11 +76,8 @@ class MLST(object):
             self.STnumber = None
             self.alleles = None
             self.concat_alleles = self.mlstex()
-            if not self.allelemissing and\
-                    not self.novel_alleles and\
-                    self.descarted and\
-                    not self.contamination:
-                self.ST = 'Ns'
+            if self.descarted:
+                self.ST += ' (Ns)'
             self.str_st = self.str_allelic_profile()
 
         # Release Ram!
