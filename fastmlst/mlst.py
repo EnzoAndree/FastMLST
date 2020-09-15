@@ -107,11 +107,13 @@ class MLST(object):
 
 
     def make_blast(self,):
+        # fastmlst dont use blast culling_limit option
+        # fastmlst order the blast output baced on calculate coverage
         blastn_cline = NcbiblastnCommandline(
             db=str(pathdb) + '/mlst.fasta', dust='no',
             outfmt='"6 sseqid slen sstrand sstart send length ' +
             'nident gaps qseqid qstart qend"',
-            culling_limit=1, max_target_seqs=130000,
+            max_target_seqs=130000,
             evalue=1E-20, ungapped=False)
         self.blastn_cli = str(blastn_cline)
         logger.debug(self.blastn_cli + ' < ' + self.fasta)
@@ -121,6 +123,8 @@ class MLST(object):
             return None
         self.blastresult = True
         blastfiltred = self.blast_filter(out)
+        del out
+        del err
         return blastfiltred
 
     def blast_filter(self, blast_out):
@@ -132,7 +136,7 @@ class MLST(object):
         dfblast['coverage'] = dfblast.length / (dfblast.slen - dfblast.gaps)
         dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen
         dfblast[toint] = dfblast[toint].astype(int)
-        # dfblast.update(dfblast.loc[dfblast['coverage'] >= 0])
+        dfblast = dfblast.loc[dfblast['coverage'] <= 1] # insertions can not be processed properly yet
         if len(dfblast) == 0:
             # there is no result
             return (self.beautiname, None, None, None, None, None, None, None,
@@ -146,12 +150,22 @@ class MLST(object):
                 rename(columns={0: 'gene', 1: 'number'}))
             dfblast = dfblast.drop(['sseqid', 'genenumber'], axis=1)
             dfblast['genome_id'] = self.beautiname
-            dfblast.index = dfblast['genome_id']
-            dfblast = dfblast[['scheme', 'gene', 'number', 'slen', 'sstrand',
-                               'sstart', 'send', 'length', 'nident', 'gaps',
-                               'coverage', 'identity', 'qseqid', 'qstart',
-                               'qend']]
-            dfblast.sort_index(inplace=True)
+            # dfblast.index = dfblast['genome_id']
+            dfblast = dfblast[['genome_id', 'scheme', 'gene', 'number', 'slen',
+                               'sstrand', 'sstart', 'send', 'length', 'nident',
+                               'gaps', 'coverage', 'identity', 'qseqid',
+                               'qstart', 'qend']]
+            # dfblast.sort_index(inplace=True)
+            # Grup by gene and select the best hit (cov=100% high ID)
+            genegrup = dfblast.groupby('gene')
+            blastfiltred_bygene = []
+            for gene, df_group in genegrup:
+                df_group.sort_values(by=['coverage', 'nident', 'gaps' ],
+                                     ascending=[False, False, True], inplace=True)
+                blastfiltred_bygene.append(df_group.head(1))
+            dfblast = pd.concat(blastfiltred_bygene, ignore_index=True)
+            del blastfiltred_bygene
+            del genegrup
             return dfblast
 
     def str_allelic_profile(self, ):
@@ -270,6 +284,7 @@ class MLST(object):
                                                             row[1]['gene'],
                                                             start, end)
                     record_fasta = SeqRecord(seq, id=identificator)
+                    # BUG: SNP at end of aligment is a deletion. probably 'fixed' in 'Grup by gene and select the best hit' commentary
                     # Check for equal gene name and diferent sequence (e.g. conaminations)
                     if row[1]['gene'] in fasta_output:
                         # gene name already in the output
@@ -280,6 +295,7 @@ class MLST(object):
                             self.contamination = True
                     else:
                         fasta_output[row[1]['gene']] = record_fasta
+                del pd_blast
             elif isinstance(pd_blast, pd.Series):
                 logger.error('If you got here, congratulations, ' +
                              ' you found a place in maintenance mlstex()!')
@@ -295,7 +311,7 @@ class MLST(object):
         return record_out
 
     def scoring(self, ):
-        genome_query = set(self.blast.index.values)
+        genome_query = set(self.blast['genome_id'].tolist())
         if len(genome_query) == 1:
             genome_query = list(genome_query)[0]
         else:
@@ -328,6 +344,8 @@ class MLST(object):
                         rank_list[scheme]['score'] += 100.0 / N
                         rank_list[scheme]['scheme'][locus] = \
                             row['number'].values[0]
+                    # BUG: Blast no make a full aligmnent, if a snp aries at the very end, the coverage is not 1
+                    # In the fasta output, this is fixed lookat the input sequence, but this no update the blast table
                     elif row['coverage'].values[0] == 1 and\
                             row['identity'].values[0] >= self.identity:
                         # full length partial match
