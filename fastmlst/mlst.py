@@ -284,7 +284,7 @@ class MLST(object):
                                                             row[1]['gene'],
                                                             start, end)
                     record_fasta = SeqRecord(seq, id=identificator)
-                    # BUG: SNP at end of aligment is a deletion. probably 'fixed' in 'Grup by gene and select the best hit' commentary
+                    # BUG: SNP at end of aligment is detected as deletion. Probably 'fixed' in 'Grup by gene and select the best hit' commentary
                     # Check for equal gene name and diferent sequence (e.g. conaminations)
                     if row[1]['gene'] in fasta_output:
                         # gene name already in the output
