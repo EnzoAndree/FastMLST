@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--fasta2line', action='store_true',
                         help='The fasta files will be in fasta2line format')
     parser.add_argument('--longheader', action='store_true',
-                        help='If --longheader is invoqued, the header of FASTA' +
+                        help='If --longheader is invoked, the header of FASTA' +
                         ' file contain a long description')
     parser.add_argument('-n', '--novel', type=str,
                         help='File name of the novel alleles')
