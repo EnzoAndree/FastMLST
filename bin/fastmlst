@@ -41,13 +41,13 @@ def check_identity_range(value):
 
 
 def runMLST(margument):
-    genome, cov, ident, sep = margument
-    return MLST(genome, cov, ident, sep)
+    genome, cov, ident, sep, header = margument
+    return MLST(genome, cov, ident, sep, header)
 
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.6'
+    V = '%(prog)s v0.0.7'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -77,6 +77,9 @@ if __name__ == '__main__':
                         help='Perform an update of the PubMLST database')
     parser.add_argument('--fasta2line', action='store_true',
                         help='The fasta files will be in fasta2line format')
+    parser.add_argument('--longheader', action='store_true',
+                        help='If --longheader is invoqued, the header of FASTA' +
+                        ' file contain a long description')
     parser.add_argument('-n', '--novel', type=str,
                         help='File name of the novel alleles')
     parser.add_argument('-V', '--version', action='version',
@@ -126,6 +129,7 @@ if __name__ == '__main__':
                             repeat(args.coverage),
                             repeat(args.identity),
                             repeat(args.separator),
+                            repeat(args.longheader),
                             ))
     for result in tqdm(p.imap_unordered(runMLST, multipleargs),
                        total=len(multipleargs),

@@ -33,8 +33,9 @@ def open_by_magic(filename):
 logger = logging.getLogger('mlst')
 
 class MLST(object):
-    def __init__(self, fasta, coverage=75, identity=95, sep=','):
+    def __init__(self, fasta, coverage=75, identity=95, sep=',', longheader=False):
         super(MLST, self).__init__()
+        self.longheader = longheader
         self.fasta = fasta
         self.fasta_opened = open_by_magic(self.fasta).read()
         if type(self.fasta_opened) != str:
@@ -133,8 +134,8 @@ class MLST(object):
         dfblast = pd.read_csv(StringIO(blast_out), sep='\t', names=header)
         toint = ['slen', 'sstart', 'send', 'length', 'nident', 'gaps',
                  'qstart', 'qend']
-        dfblast['coverage'] = dfblast.length / (dfblast.slen - dfblast.gaps)
-        dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen
+        dfblast['coverage'] = (dfblast.length - dfblast.gaps) / dfblast.slen
+        dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen # this is a 'global' %identity
         dfblast[toint] = dfblast[toint].astype(int)
         dfblast = dfblast.loc[dfblast['coverage'] <= 1] # insertions can not be processed properly yet
         if len(dfblast) == 0:
@@ -300,14 +301,21 @@ class MLST(object):
                 logger.error('If you got here, congratulations, ' +
                              ' you found a place in maintenance mlstex()!')
         self.alleles = fasta_output
-        header = self.beautiname + ' '
-        concatenatedseq = ''
-        for genename in sorted(self.alleles):
-            header += genename + '_'
-            concatenatedseq += self.alleles[genename].seq
-        record_out = SeqRecord(concatenatedseq, id=header.strip('_'),
-                               description='Concatenated Sequences of MLST ' +
-                               'from ' + self.beautiname)
+        if self.longheader:
+            header = self.beautiname + ' '
+            concatenatedseq = ''
+            for genename in sorted(self.alleles):
+                header += genename + '_'
+                concatenatedseq += self.alleles[genename].seq
+            record_out = SeqRecord(concatenatedseq, id=header.strip('_'),
+                                   description='Concatenated Sequences of MLST ' +
+                                   'from ' + self.beautiname)
+        else:
+            concatenatedseq = ''
+            for genename in sorted(self.alleles):
+                concatenatedseq += self.alleles[genename].seq
+            record_out = SeqRecord(concatenatedseq, id=self.beautiname,
+                description='')
         return record_out
 
     def scoring(self, ):
