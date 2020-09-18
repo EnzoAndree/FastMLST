@@ -346,7 +346,12 @@ class MLST(object):
                     rank_list[scheme]['scheme'][locus] = '-'
                 elif len(row) == 1:
                     # only one allele
-                    if row['coverage'].values[0] == 1 and\
+                    # if have an insertion slen < length
+                    if row['slen'].values[0] < row['length'].values[0]:
+                        rank_list[scheme]['score'] += 20.0 / N
+                        rank_list[scheme]['scheme'][locus] = \
+                            '{}?'.format(row['number'].values[0])
+                    elif row['coverage'].values[0] == 1 and\
                             row['identity'].values[0] == 1:
                         # perfect match
                         rank_list[scheme]['score'] += 100.0 / N
@@ -372,7 +377,17 @@ class MLST(object):
                 else:
                     # Contamination
                     for index, r in row.iterrows():
-                        if r['coverage'] == 1 and r['identity'] == 1:
+                        if r['slen'] < r['length']:
+                            if locus not in rank_list[scheme]['scheme']:
+                                rank_list[scheme]['score'] += 20.0 / N
+                                rank_list[scheme]['scheme'][locus] = \
+                                    '{}?'.format(r['number'])
+                            else:
+                                rank_list[scheme]['score'] -= 20.0 / N
+                                rank_list[scheme]['score'] += 20.0 / N / len(row)
+                                rank_list[scheme]['scheme'][locus] += \
+                                    '|' + '{}?'.format(r['number'])
+                        elif r['coverage'] == 1 and r['identity'] == 1:
                             # perfect match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 100.0 / N
@@ -397,7 +412,7 @@ class MLST(object):
                                 # self.contamination = True
                         elif r['coverage'] >= self.coverage and\
                                 r['identity'] >= self.identity:
-                            # partia length partia match
+                            # partial length partial match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 20.0 / N
                                 rank_list[scheme]['scheme'][locus] = \
