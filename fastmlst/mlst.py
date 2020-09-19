@@ -138,6 +138,7 @@ class MLST(object):
         dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen # this is a 'global' %identity
         dfblast[toint] = dfblast[toint].astype(int)
         dfblast = dfblast.loc[dfblast['coverage'] <= 1] # insertions can not be processed properly yet
+        # dfblast = dfblast.loc[dfblast['slen'] >= dfblast['length']] # if have an insertion slen < length
         if len(dfblast) == 0:
             # there is no result
             return (self.beautiname, None, None, None, None, None, None, None,
