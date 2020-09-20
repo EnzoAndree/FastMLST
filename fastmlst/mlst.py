@@ -159,15 +159,19 @@ class MLST(object):
                                'qstart', 'qend']]
             # dfblast.sort_index(inplace=True)
             # Grup by gene and select the best hit (cov=100% high ID)
-            genegrup = dfblast.groupby('gene')
-            blastfiltred_bygene = []
-            for gene, df_group in genegrup:
-                df_group.sort_values(by=['coverage', 'nident', 'gaps' ],
-                                     ascending=[False, False, True], inplace=True)
-                blastfiltred_bygene.append(df_group.head(1))
-            dfblast = pd.concat(blastfiltred_bygene, ignore_index=True)
-            del blastfiltred_bygene
-            del genegrup
+            # Better Timing
+            dfblast = dfblast.sort_values(by=['coverage', 'nident', 'gaps' ],
+                  ascending=[False, False, True]).drop_duplicates(['gene'], keep='first')
+
+            # genegrup = dfblast.groupby('gene')
+            # blastfiltred_bygene = []
+            # for gene, df_group in genegrup:
+            #     df_group.sort_values(by=['coverage', 'nident', 'gaps' ],
+            #                          ascending=[False, False, True], inplace=True)
+            #     blastfiltred_bygene.append(df_group.head(1))
+            # dfblast = pd.concat(blastfiltred_bygene, ignore_index=True)
+            # del blastfiltred_bygene
+            # del genegrup
             return dfblast
 
     def str_allelic_profile(self, ):
