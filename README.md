@@ -94,8 +94,8 @@ $ fastmlst --update-mlst -t 24
 ```
 # Complete usage Options
 ```
-usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst] [--fasta2line]
-                [-n NOVEL] [-V]
+usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst]
+                [--fasta2line] [--longheader] [-n NOVEL] [-V]
                 [genomes [genomes ...]]
 
 positional arguments:
@@ -119,6 +119,7 @@ optional arguments:
                         DNA %Identity of full allelle to consider 'similar' [~] (default 95%)
   --update-mlst         Perform an update of the PubMLST database
   --fasta2line          The fasta files will be in fasta2line format
+  --longheader          If --longheader is invoked, the header of FASTA file contain a long description
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
   -V, --version         show program's version number and exit
