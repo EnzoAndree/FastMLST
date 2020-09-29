@@ -81,8 +81,8 @@ Symbol | Meaning | Length | Identity
 FastMLST uses a scoring system to determine the scheme to be employed similar to that proposed by [Tseemann](https://github.com/tseemann/mlst). The score for a scheme with N alleles is as follows:
 
 * +100/N points for an exact allele match _e.g._ `1`
-* +70/N points for a novel allele match (50% of an exact allele) _e.g._ `~1`
-* +20/N points for a partial allele match (20% of an exact alelle) _e.g._ `1?`
+* +70/N points for a novel allele match _e.g._ `~1`
+* +20/N points for a partial allele match _e.g._ `1?`
 * 0 points for a missing allele _e.g._ `-`
 # Updating the Schemes
 You should **always, always, always keep the PubMLST database updated**. Fortunately there is a function to simply update the database:
