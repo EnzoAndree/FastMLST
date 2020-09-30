@@ -383,6 +383,7 @@ class MLST(object):
                         rank_list[scheme]['scheme'][locus] = '-'
                 else:
                     # multiples hits
+                    fulllengthhits = []
                     for index, r in row.iterrows():
                         # if r['slen'] < r['length']:
                         #     if locus not in rank_list[scheme]['scheme']:
@@ -400,12 +401,16 @@ class MLST(object):
                                 rank_list[scheme]['score'] += 100.0 / N
                                 rank_list[scheme]['scheme'][locus] = \
                                     r['number']
+                                fulllengthhits.append(locus)
                             else:
                                 rank_list[scheme]['score'] -= 100.0 / N
                                 rank_list[scheme]['score'] += 100.0 / N / len(row)
                                 rank_list[scheme]['scheme'][locus] += \
                                     '|' + r['number']
-                        elif r['coverage'] == 1 and r['identity'] >= self.identity:
+                                fulllengthhits.append(locus)
+                        elif r['coverage'] == 1 and\
+                                r['identity'] >= self.identity and\
+                                locus not in fulllengthhits:
                             # full length partia match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 70.0 / N
@@ -418,7 +423,8 @@ class MLST(object):
                             #         '|' + '~{}'.format(r['number'])
                                 # self.contamination = True
                         elif r['coverage'] >= self.coverage and\
-                                r['identity'] >= self.identity:
+                                r['identity'] >= self.identity and\
+                                locus not in fulllengthhits:
                             # partial length partial match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 20.0 / N
