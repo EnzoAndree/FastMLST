@@ -138,7 +138,7 @@ class MLST(object):
         dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen # this is a 'global' %identity
         dfblast[toint] = dfblast[toint].astype(int)
         # don't even look at the hits below these cov's and identities
-        dfblast = dfblast.loc[(dfblast['coverage'] <= 1) & (dfblast['coverage'] > 0.9) & (dfblast['identity'] > 0.9)] # insertions can not be processed properly yet
+        dfblast = dfblast.loc[(dfblast['coverage'] <= 1) & (dfblast['coverage'] > 0.8) & (dfblast['identity'] > 0.8)] # insertions can not be processed properly yet
         # dfblast = dfblast.loc[dfblast['slen'] >= dfblast['length']] # if have an insertion slen < length
         if len(dfblast) == 0:
             # there is no result
