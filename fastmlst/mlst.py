@@ -326,7 +326,11 @@ class MLST(object):
         return record_out
 
     def scoring(self, ):
-        genome_query = set(self.blast['genome_id'].tolist())
+        try:
+            genome_query = set(self.blast['genome_id'].tolist())
+        except Exception as e:
+            logger.warning('There is no result for (?) ', self.blastn_cli + ' < ' + self.fasta)
+            exit()
         if len(genome_query) == 1:
             genome_query = list(genome_query)[0]
         else:
