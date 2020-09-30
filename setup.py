@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='fastmlst',
-    version='0.0.7',
+    version='0.0.8b',
     description='A Fast Multilocus Sequence Typing scan against PubMLST typing schemes',
     url='https://github.com/EnzoAndree/FastMLST',
     author='Enzo Guerrero-Araya',

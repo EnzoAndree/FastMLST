@@ -160,19 +160,20 @@ class MLST(object):
             # dfblast.sort_index(inplace=True)
             # Grup by gene and select the best hit (cov=100% high ID)
             # Better Timing
-            dfblast = dfblast.sort_values(by=['coverage', 'nident', 'gaps' ],
-                  ascending=[False, False, True]).drop_duplicates(['gene'], keep='first')
+            # dfblast = dfblast.sort_values(by=['coverage', 'nident', 'gaps' ],
+            #       ascending=[False, False, True]).drop_duplicates(['gene'], keep='first')
 
             # genegrup = dfblast.groupby('gene')
             # blastfiltred_bygene = []
             # for gene, df_group in genegrup:
             #     df_group.sort_values(by=['coverage', 'nident', 'gaps' ],
             #                          ascending=[False, False, True], inplace=True)
-            #     blastfiltred_bygene.append(df_group.head(1))
+            #     blastfiltred_bygene.append(df_group.head(5))
             # dfblast = pd.concat(blastfiltred_bygene, ignore_index=True)
             # del blastfiltred_bygene
             # del genegrup
             return dfblast
+
 
     def str_allelic_profile(self, ):
         if not isinstance(self.ST, pd.DataFrame):
@@ -341,8 +342,8 @@ class MLST(object):
             N = len(loci)
             blast_scheme = self.blast[(self.blast.gene.isin(loci)) &
                                       (self.blast.scheme == scheme)].copy()
-            blast_scheme.sort_values(by=['coverage', 'length', 'nident'],
-                                     ascending=False, inplace=True)
+            blast_scheme.sort_values(by=['coverage', 'identity', 'length'],
+                                     ascending=[False, False, False], inplace=True)
             for locus in loci:
                 row = blast_scheme[blast_scheme.gene == locus]
                 if len(row) == 0:
@@ -380,19 +381,19 @@ class MLST(object):
                         rank_list[scheme]['score'] += 0
                         rank_list[scheme]['scheme'][locus] = '-'
                 else:
-                    # Contamination
+                    # multiples hits
                     for index, r in row.iterrows():
-                        if r['slen'] < r['length']:
-                            if locus not in rank_list[scheme]['scheme']:
-                                rank_list[scheme]['score'] += 20.0 / N
-                                rank_list[scheme]['scheme'][locus] = \
-                                    '{}?'.format(r['number'])
-                            else:
-                                rank_list[scheme]['score'] -= 20.0 / N
-                                rank_list[scheme]['score'] += 20.0 / N / len(row)
-                                rank_list[scheme]['scheme'][locus] += \
-                                    '|' + '{}?'.format(r['number'])
-                        elif r['coverage'] == 1 and r['identity'] == 1:
+                        # if r['slen'] < r['length']:
+                        #     if locus not in rank_list[scheme]['scheme']:
+                        #         rank_list[scheme]['score'] += 20.0 / N
+                        #         rank_list[scheme]['scheme'][locus] = \
+                        #             '{}?'.format(r['number'])
+                        #     else:
+                        #         rank_list[scheme]['score'] -= 20.0 / N
+                        #         rank_list[scheme]['score'] += 20.0 / N / len(row)
+                        #         rank_list[scheme]['scheme'][locus] += \
+                        #             '|' + '{}?'.format(r['number'])
+                        if r['coverage'] == 1 and r['identity'] == 1:
                             # perfect match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 100.0 / N
@@ -409,11 +410,11 @@ class MLST(object):
                                 rank_list[scheme]['score'] += 70.0 / N
                                 rank_list[scheme]['scheme'][locus] = \
                                     '~{}'.format(r['number'])
-                            else:
-                                rank_list[scheme]['score'] -= 70.0 / N
-                                rank_list[scheme]['score'] += 70.0 / N / len(row)
-                                rank_list[scheme]['scheme'][locus] += \
-                                    '|' + '~{}'.format(r['number'])
+                            # else:
+                            #     rank_list[scheme]['score'] -= 70.0 / N
+                            #     rank_list[scheme]['score'] += 70.0 / N / len(row)
+                            #     rank_list[scheme]['scheme'][locus] += \
+                            #         '|' + '~{}'.format(r['number'])
                                 # self.contamination = True
                         elif r['coverage'] >= self.coverage and\
                                 r['identity'] >= self.identity:
@@ -422,11 +423,11 @@ class MLST(object):
                                 rank_list[scheme]['score'] += 20.0 / N
                                 rank_list[scheme]['scheme'][locus] = \
                                     '{}?'.format(r['number'])
-                            else:
-                                rank_list[scheme]['score'] -= 20.0 / N
-                                rank_list[scheme]['score'] += 20.0 / N / len(row)
-                                rank_list[scheme]['scheme'][locus] += \
-                                    '|' + '{}?'.format(r['number'])
+                            # else:
+                                # rank_list[scheme]['score'] -= 20.0 / N
+                                # rank_list[scheme]['score'] += 20.0 / N / len(row)
+                                # rank_list[scheme]['scheme'][locus] += \
+                                #     '|' + '{}?'.format(r['number'])
                                 # self.contamination = True
                         else:
                             rank_list[scheme]['score'] += 0
@@ -441,9 +442,7 @@ class MLST(object):
 
 
 def main():
-    genome = '/Users/enzo/Desktop/PYMLST/genomes/input_13.fasta.fna'
-    mlst = MLST(genome)
-
+    print('Get out of here you little human!')
 
 if __name__ == '__main__':
     main()
