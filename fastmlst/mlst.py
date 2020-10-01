@@ -142,8 +142,9 @@ class MLST(object):
         # dfblast = dfblast.loc[dfblast['slen'] >= dfblast['length']] # if have an insertion slen < length
         if len(dfblast) == 0:
             # there is no result
-            return (self.beautiname, None, None, None, None, None, None, None,
-                    None, None)
+            logger.warning('There is no result for ', self.blastn_cli + ' < ' + self.fasta)
+            self.blastresult = False
+            return None
         else:
             dfblast = dfblast.join(
                 dfblast['sseqid'].str.split('.', 1, expand=True).
@@ -330,6 +331,7 @@ class MLST(object):
             genome_query = set(self.blast['genome_id'].tolist())
         except Exception as e:
             logger.warning('There is no result for (?) ', self.blastn_cli + ' < ' + self.fasta)
+            print(self.blast)
             exit()
         if len(genome_query) == 1:
             genome_query = list(genome_query)[0]
