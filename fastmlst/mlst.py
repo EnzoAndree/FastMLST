@@ -355,11 +355,11 @@ class MLST(object):
                 elif len(row) == 1:
                     # only one allele
                     # if have an insertion slen < length
-                    if row['slen'].values[0] < row['length'].values[0]:
-                        rank_list[scheme]['score'] += 20.0 / N
-                        rank_list[scheme]['scheme'][locus] = \
-                            '{}?'.format(row['number'].values[0])
-                    elif row['coverage'].values[0] == 1 and\
+                    # if row['slen'].values[0] < row['length'].values[0]:
+                    #     rank_list[scheme]['score'] += 20.0 / N
+                    #     rank_list[scheme]['scheme'][locus] = \
+                    #         '{}?'.format(row['number'].values[0])
+                    if row['coverage'].values[0] == 1 and\
                             row['identity'].values[0] == 1:
                         # perfect match
                         rank_list[scheme]['score'] += 100.0 / N
@@ -368,7 +368,8 @@ class MLST(object):
                     # BUG: Blast no make a full aligmnent, if a snp aries at the very end, the coverage is not 1
                     # In the fasta output, this is fixed lookat the input sequence, but this no update the blast table
                     elif row['coverage'].values[0] == 1 and\
-                            row['identity'].values[0] >= self.identity:
+                            row['identity'].values[0] >= self.identity and\
+                            row['slen'].values[0] >= row['length'].values[0]:
                         # full length partial match
                         rank_list[scheme]['score'] += 70.0 / N
                         rank_list[scheme]['scheme'][locus] = \
@@ -406,7 +407,9 @@ class MLST(object):
                                 rank_list[scheme]['score'] += 100.0 / N / len(row)
                                 rank_list[scheme]['scheme'][locus] += \
                                     '|' + r['number']
-                        elif r['coverage'] == 1 and r['identity'] >= self.identity:
+                        elif r['coverage'] == 1 and\
+                                r['identity'] >= self.identity and\
+                                r['slen'] >= r['length']:
                             # full length partia match
                             if locus not in rank_list[scheme]['scheme']:
                                 rank_list[scheme]['score'] += 70.0 / N
