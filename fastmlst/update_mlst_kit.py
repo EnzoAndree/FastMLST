@@ -187,7 +187,7 @@ def show_scheme_list():
         # codename = '_'.join(data[1].strip('/').split('/')[-4].split('_')[1:-1])
         codename = best_guess_codename(parent.text)
         species[codename] = parent.text
-    print(f'There are {len(species)} schemes:\n')
+    print(f'There are {len(species)} schemes (A round of applause to @keithajolley! (Jolley, et al., 2018)):\n')
     i = 1
     for sch, species in species.items():
         print(f'({i}) {sch}: {species.strip()}')
