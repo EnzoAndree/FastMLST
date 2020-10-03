@@ -141,7 +141,6 @@ if __name__ == '__main__':
                          'after all. I\'ll keep trying to choose the best scheme.')
             args.scheme = None
     genome_mlst = []
-    p = Pool(args.threads)
     multipleargs = list(zip(args.genomes,
                             repeat(args.coverage),
                             repeat(args.identity),
@@ -149,13 +148,12 @@ if __name__ == '__main__':
                             repeat(args.longheader),
                             repeat(args.scheme),
                             ))
-    for result in tqdm(p.imap_unordered(runMLST, multipleargs),
-                       total=len(multipleargs),
-                       desc='Scanning Genomes using {} threads'.
-                       format(args.threads), unit='Genomes', leave=False):
-        genome_mlst.append(result)
-    p.close()
-    p.join()
+    with Pool(args.threads) as p:
+        for result in tqdm(p.imap(runMLST, multipleargs),
+                           total=len(multipleargs),
+                           desc='Scanning Genomes using {} threads'.
+                           format(args.threads), unit='Genomes', leave=False):
+            genome_mlst.append(result)
     # Show the shcheme list and exit
     fastaconcat = []
     fastanovelconcat = []
