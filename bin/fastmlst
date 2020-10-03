@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import argparse
 import logging
 from sys import exit
@@ -41,8 +39,8 @@ def check_identity_range(value):
 
 
 def runMLST(margument):
-    genome, cov, ident, sep, header = margument
-    return MLST(genome, cov, ident, sep, header)
+    genome, cov, ident, sep, header, shcheme = margument
+    return MLST(genome, cov, ident, sep, header, shcheme)
 
 
 
@@ -59,6 +57,10 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--separator', type=unescaped_str, default=',',
                         help='Choose a character to use as a separator' +
                         ' (default ",")')
+    parser.add_argument('-sch', '--scheme', type=str,
+                        help='Set a scheme target (I am not dumb, let me choose a scheme by myself!)')
+    parser.add_argument('--scheme-list', action='store_true',
+                        help='Show all schemes supported')
     parser.add_argument('-fo', '--fastaoutput', type=str, default='mlst.fasta',
                         help='File name of the concatenated alleles output' +
                         ' (default mlst.fasta)')
@@ -86,28 +88,25 @@ if __name__ == '__main__':
                         version=V)
     args = parser.parse_args()
     # Verbose?
-    formatter = logging.Formatter('%(levelname)s  %(message)s')
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s@%(name)s: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
     split_namefromcode = compile(r'(?P<gene>[a-zA-Z]+)(?P<novel>~?)(?P<number>\d+)(?P<partial>\??)')
 
     if args.verbose == 0:
         logging.basicConfig(level=logging.WARNING,
                             format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
                             datefmt='%H:%M:%S')
-        logger = logging.getLogger('fastMLST')
+        logger = logging.getLogger('FastMLST')
     elif args.verbose == 1:
         logging.basicConfig(level=logging.INFO,
                             format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
                             datefmt='%H:%M:%S')
-        logger = logging.getLogger('fastMLST')
-        logger.addHandler(ch)
+        logger = logging.getLogger('FastMLST')
     elif args.verbose == 2:
         logging.basicConfig(level=logging.DEBUG,
                             format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
                             datefmt='%H:%M:%S')
-        logger = logging.getLogger('fastMLST')
-        logger.addHandler(ch)
+        logger = logging.getLogger('FastMLST')
     # Check for pubmlst
     pathdb.mkdir(exist_ok=True, parents=True)
     is_all_files = all(Path(str(pathdb) + '/' + f).is_file()
@@ -120,16 +119,32 @@ if __name__ == '__main__':
         update_mlstdb(args.threads)
         if args.update_mlst:
             exit()
-    genome_mlst = []
+    if args.scheme_list:
+        from fastmlst.update_mlst_kit import show_scheme_list
+        show_scheme_list()
+        exit()
     if not args.genomes:
         parser.print_help(stderr)
         exit()
+    # Check if there are a target scheme
+    if args.scheme != None:
+        scheme_dir = pathdb/'schemes'
+        if args.scheme in [d.stem for d in scheme_dir.iterdir()]:
+            logger.info('Ok my little buddy, i trust your judgment. I will '+
+                          f'proceed with the search using only the following scheme: {args.scheme}')
+        else:
+            logger.error(f'Are you sure that "{args.scheme}" is a supported scheme?')
+            logger.error('Don\'t worry my little buddy. You are a human '+
+                         'after all. I\'ll keep trying to choose the best scheme.')
+            args.scheme = None
+    genome_mlst = []
     p = Pool(args.threads)
     multipleargs = list(zip(args.genomes,
                             repeat(args.coverage),
                             repeat(args.identity),
                             repeat(args.separator),
                             repeat(args.longheader),
+                            repeat(args.scheme),
                             ))
     for result in tqdm(p.imap_unordered(runMLST, multipleargs),
                        total=len(multipleargs),
@@ -138,7 +153,7 @@ if __name__ == '__main__':
         genome_mlst.append(result)
     p.close()
     p.join()
-    # make only one fasta concat
+    # Show the shcheme list and exit
     fastaconcat = []
     fastanovelconcat = []
     str_alleles = ''

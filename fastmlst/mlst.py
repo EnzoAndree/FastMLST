@@ -32,9 +32,16 @@ def open_by_magic(filename):
 
 logger = logging.getLogger('mlst')
 
+# Will be arbitrarily excluded. by Enzo.
+excluded_by_default = ['abaumannii#2', 'ecoli#2', 'leptospira#2', 'leptospira#3',
+                       'mgallisepticum#1', 'pmultocida#1', 'sthermophilus',
+                       'vcholerae#2']
+
 class MLST(object):
-    def __init__(self, fasta, coverage=75, identity=95, sep=',', longheader=False):
+    def __init__(self, fasta, coverage=75, identity=95, sep=',',
+            longheader=False, target_scheme=None):
         super(MLST, self).__init__()
+        self.target_scheme = target_scheme
         self.longheader = longheader
         self.fasta = fasta
         self.fasta_opened = open_by_magic(self.fasta).read()
@@ -120,7 +127,7 @@ class MLST(object):
         logger.debug(self.blastn_cli + ' < ' + self.fasta)
         out, err = blastn_cline(stdin=self.fasta_opened)
         if out == '':
-            logger.warning('There is no result for ', self.blastn_cli + ' < ' + self.fasta)
+            logger.warning(f'There is no result for: {self.blastn_cli} < {self.fasta}')
             return None
         self.blastresult = True
         blastfiltred = self.blast_filter(out)
@@ -142,7 +149,7 @@ class MLST(object):
         # dfblast = dfblast.loc[dfblast['slen'] >= dfblast['length']] # if have an insertion slen < length
         if len(dfblast) == 0:
             # there is no result
-            logger.warning('There is no result for ', self.blastn_cli + ' < ' + self.fasta)
+            logger.warning(f'There is no result for: {self.blastn_cli} < {self.fasta}')
             self.blastresult = False
             return None
         else:
@@ -159,6 +166,16 @@ class MLST(object):
                                'sstrand', 'sstart', 'send', 'length', 'nident',
                                'gaps', 'coverage', 'identity', 'qseqid',
                                'qstart', 'qend']]
+            if self.target_scheme != None:
+                dfblast = dfblast.loc[dfblast['scheme'] == self.target_scheme]
+            else:
+                dfblast = dfblast[~dfblast['scheme'].isin(excluded_by_default)] # decapitation!
+            if len(dfblast) == 0:
+                # there is no result
+                logger.warning(f'There is no result for: {self.blastn_cli} < {self.fasta}')
+                self.blastresult = False
+                return None
+
             # dfblast.sort_index(inplace=True)
             # Grup by gene and select the best hit (cov=100% high ID)
             # Better Timing

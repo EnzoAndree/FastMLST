@@ -31,8 +31,8 @@ def load_obj(name):
 
 def best_guess_codename(text):
     # i hope that this is correct
-    text = text.replace('.', '').strip()
-    text = text.replace('Candidatus ', '')
+    text = text.replace('.', '').strip().lower()
+    text = text.replace('candidatus ', '')
     text = text.replace('/', '.')
     text = text.replace('(', '')
     text = text.replace(')', '')
@@ -64,13 +64,13 @@ def best_guess_codename(text):
         if '#' in text:
             # sh#t, there is multiples schemes for a sigle specie :(
             components = text.split(' ')
-            genus = components[0][0].upper()
+            genus = components[0][0]
             specie = components[1].split('#')[0]
             schemenumber = text.split('#')[-1]
             codename = f'{genus}{specie}#{schemenumber}'
         else:
             components = text.split(' ')
-            genus = components[0][0].upper()
+            genus = components[0][0]
             specie = components[1]
             codename = f'{genus}{specie}'
     elif len(text.split(' ')) > 2:
@@ -78,14 +78,14 @@ def best_guess_codename(text):
         if '#' in text:
             # sh#t, there is multiples schemes for a sigle specie :(
             components = text.split(' ')
-            genus = components[0][0].upper()
+            genus = components[0][0]
             specie = components[1].split('#')[0]
             extra = '_'.join(components[2:])
             schemenumber = text.split('#')[-1]
             codename = f'{genus}{specie}_{extra}#{schemenumber}'
         else:
             components = text.split(' ')
-            genus = components[0][0].upper()
+            genus = components[0][0]
             specie = components[1]
             extra = '_'.join(components[2:])
             codename = f'{genus}{specie}_{extra}'
@@ -168,3 +168,27 @@ def update_mlstdb(threads):
     DB_process.wait()
     logger.info('BLASTdb was created using pubmlst data')
     logger.info('Update PubMLST Complete')
+
+def show_scheme_list():
+    datadb = Path(str(pathdb) + '/dbases.xml')
+    if not datadb.is_file():
+        # update the database
+        from sys import exit
+        logger.error('There is no dbases.xml, please update the database')
+        exit()
+    tree = ET.parse(datadb)
+    root = tree.getroot()
+    species = defaultdict()
+    for parent in root.iter('species'):
+        data = []
+        for child in parent.iter('url'):
+            data.append(child.text)
+        # BUG solved!, this is not the scheme code calculate it using best_guess_codename
+        # codename = '_'.join(data[1].strip('/').split('/')[-4].split('_')[1:-1])
+        codename = best_guess_codename(parent.text)
+        species[codename] = parent.text
+    print(f'There are {len(species)} schemes:\n')
+    i = 1
+    for sch, species in species.items():
+        print(f'({i}) {sch}: {species.strip()}')
+        i += 1
