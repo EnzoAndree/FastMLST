@@ -78,7 +78,7 @@ RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11)
 
 A list of schemes supported is displayed with the option `--scheme-list` in the following format `(n) code_name: Full species name`
 
-**Hint: you must use just the `code_name` in the `--scheme` option.**
+**Hint: You must use just the `code_name` in the `--scheme` option.**
 
 ```
 $ fastmlst --scheme-list
