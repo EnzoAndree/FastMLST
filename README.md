@@ -69,7 +69,7 @@ FastMLST will  try to use all available cores. It can be modified with `-t` opti
 ```
 $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta 
 ```
-You also can specify to FastMLST the scheme name using `--scheme` option, this is particularly useful when there is more than one scheme per species:
+You also can specify to FastMLST the scheme name using the `--scheme` option, this is particularly useful when there is more than one scheme per species:
 
 ```
 $ fastmlst --scheme cdifficile cdiff_refferences/RT078_CDM120.fasta
