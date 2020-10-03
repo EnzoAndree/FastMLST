@@ -134,7 +134,7 @@ def update_mlstdb(threads):
     t = ThreadPool(threads)
     genome_mlst = []
     with ThreadPool(threads) as t:
-        for result in tqdm(t.imap_unordered(download_fasta, datadb.items()),
+        for result in tqdm(t.imap(download_fasta, datadb.items()),
                            total=len(datadb.items()),
                            desc='Downloading Schemes using {} threads'.
                            format(threads), unit='Schemes', leave=True):
