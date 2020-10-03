@@ -128,6 +128,7 @@ if __name__ == '__main__':
         exit()
     # Check if there are a target scheme
     if args.scheme != None:
+        args.scheme = args.scheme.lower()
         scheme_dir = pathdb/'schemes'
         if args.scheme in [d.stem for d in scheme_dir.iterdir()]:
             logger.info('Ok my little buddy, i trust your judgment. I will '+
