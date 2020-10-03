@@ -133,13 +133,12 @@ def update_mlstdb(threads):
     logger.info('Starting download of all schemes')
     t = ThreadPool(threads)
     genome_mlst = []
-    for result in tqdm(t.imap_unordered(download_fasta, datadb.items()),
-                       total=len(datadb.items()),
-                       desc='Downloading Schemes using {} threads'.
-                       format(threads), unit='Schemes', leave=True):
-        genome_mlst.append(result)
-    t.close()
-    t.join()
+    with ThreadPool(threads) as t:
+        for result in tqdm(t.imap_unordered(download_fasta, datadb.items()),
+                           total=len(datadb.items()),
+                           desc='Downloading Schemes using {} threads'.
+                           format(threads), unit='Schemes', leave=True):
+            genome_mlst.append(result)
     logger.info('Schemes were downloaded')
     fastas = Path(str(pathdb) + '/schemes').glob('*/*.tfa')
     allfasta = []
