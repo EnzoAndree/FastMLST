@@ -95,8 +95,8 @@ $ fastmlst --update-mlst -t 24
 ```
 # Complete usage Options
 ```
-usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst]
-                [--fasta2line] [--longheader] [-n NOVEL] [-V]
+usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE]
+                [-pid IDENTITY] [--update-mlst] [--fasta2line] [--longheader] [-n NOVEL] [-V]
                 [genomes [genomes ...]]
 
 positional arguments:
@@ -110,6 +110,9 @@ optional arguments:
                         Verbose output level choices: [0, 1, 2]
   -s SEPARATOR, --separator SEPARATOR
                         Choose a character to use as a separator (default ",")
+  -sch SCHEME, --scheme SCHEME
+                        Set a scheme target (I am not dumb, let me choose a scheme by myself!)
+  --scheme-list         Show all schemes supported
   -fo FASTAOUTPUT, --fastaoutput FASTAOUTPUT
                         File name of the concatenated alleles output (default mlst.fasta)
   -to TABLEOUTPUT, --tableoutput TABLEOUTPUT
@@ -124,7 +127,7 @@ optional arguments:
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
   -V, --version         show program's version number and exit
-```
+ ```
 # Citation
 If you use FastMLST in your publication, I could recommend the following sentence in methodology:
 
