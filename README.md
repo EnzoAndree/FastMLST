@@ -69,7 +69,32 @@ FastMLST will  try to use all available cores. It can be modified with `-t` opti
 ```
 $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta 
 ```
+You also can specify it with the `--scheme` option, If you know exactly the MLST scheme to use:
+
+```
+$ fastmlst --scheme cdifficile cdiff_refferences/RT078_CDM120.fasta
+RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
+```
+
+A list of codes of the form `(n) code_name: Full species name` is displayed with the option `--scheme-list`
+
+**Hint: you must use just the `code_name` in the `--scheme` option.**
+
+```
+$ fastmlst --scheme-list
+There are 150 schemes (A round of applause to @keithajolley! (Jolley, et al., 2018)):
+
+(1) achromobacter: Achromobacter spp.
+(2) abaumannii#1: Acinetobacter baumannii#1
+(3) abaumannii#2: Acinetobacter baumannii#2
+(n) (...)
+(148) xfastidiosa: Xylella fastidiosa
+(149) ypseudotuberculosis: Yersinia pseudotuberculosis
+(150) yruckeri: Yersinia ruckeri
+```
+
 ## Output symbology
+
 Symbol | Meaning | Length | Identity
 ---   | --- | --- | ---
 `n`   | Exact intact allele                   | 100%            | 100%
@@ -127,7 +152,7 @@ optional arguments:
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
   -V, --version         show program's version number and exit
- ```
+```
 # Citation
 If you use FastMLST in your publication, I could recommend the following sentence in methodology:
 
