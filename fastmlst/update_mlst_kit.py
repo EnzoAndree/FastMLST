@@ -33,7 +33,7 @@ def best_guess_codename(text):
     # i hope that this is correct
     text = text.replace('.', '').strip().lower()
     text = text.replace('candidatus ', '')
-    text = text.replace('/', '.')
+    text = text.replace('/', '') # the dots are used in blast_filter to separate the scheme form data, use other sep
     text = text.replace('(', '')
     text = text.replace(')', '')
     # no more bugs plz!
