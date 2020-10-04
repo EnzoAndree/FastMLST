@@ -87,7 +87,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--novel', type=str,
                         help='File name of the novel alleles')
     parser.add_argument('-V', '--version', action='version',
-                        version=V)
+                        version=V, help='Show program\'s version number and exit')
     args = parser.parse_args()
     # Verbose?
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s@%(name)s: %(message)s')
