@@ -69,10 +69,18 @@ FastMLST will  try to use all available cores. It can be modified with `-t` opti
 ```
 $ fastmlst -t 2 cdiff_refferences/RT078_CDM120.fasta 
 ```
-You also can specify to FastMLST the scheme name using the `--scheme` option, this is particularly useful when there is more than one scheme per species:
+You also can specify to FastMLST the scheme name using the `--scheme` option, this is particularly useful when there is more than one scheme per species. If you use this option, it will generate a table with a new format (available since version 0.0.10) which is easier to use in other programs like [phyloviz](http://www.phyloviz.net/).
 
 ```
 $ fastmlst --scheme cdifficile cdiff_refferences/RT078_CDM120.fasta
+Genome,Scheme,ST,adk,atpA,dxr,glyA,recA,sodA,tpi,mlst_clade
+RT078_CDM120.fasta,cdifficile,11,5,8,5,11,9,11,8,5.0
+```
+
+If you want the old format just add the option `--legacy`:
+
+```
+$ fastmlst --legacy --scheme cdifficile cdiff_refferences/RT078_CDM120.fasta
 RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
 ```
 
@@ -82,15 +90,15 @@ A list of schemes supported is displayed with the option `--scheme-list` in the 
 
 ```
 $ fastmlst --scheme-list
-There are 150 schemes (A round of applause to @keithajolley! (Jolley, et al., 2018)):
+There are 153 schemes (A round of applause to @keithajolley! (Jolley, et al., 2018)):
 
 (1) achromobacter: Achromobacter spp.
 (2) abaumannii#1: Acinetobacter baumannii#1
 (3) abaumannii#2: Acinetobacter baumannii#2
 (n) (...)
-(148) xfastidiosa: Xylella fastidiosa
-(149) ypseudotuberculosis: Yersinia pseudotuberculosis
-(150) yruckeri: Yersinia ruckeri
+(151) xfastidiosa: Xylella fastidiosa
+(152) ypseudotuberculosis: Yersinia pseudotuberculosis
+(153) yruckeri: Yersinia ruckeri
 ```
 
 ## Output symbology
@@ -149,9 +157,11 @@ optional arguments:
   --update-mlst         Perform an update of the PubMLST database
   --fasta2line          The fasta files will be in fasta2line format
   --longheader          If --longheader is invoked, the header of FASTA file contain a long description
+  --legacy              If --legacy is invoked, the csv reported contain the gene name and the allele id in the row
+                        [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)]. This option is only available when the --scheme is defined
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
-  -V, --version         show program's version number and exit
+  -V, --version         Show program's version number and exit
 ```
 # Citation
 If you use FastMLST in your publication, I could recommend the following sentence in methodology:

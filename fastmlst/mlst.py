@@ -13,6 +13,7 @@ from io import StringIO
 from pathlib import Path
 import gzip
 import bz2
+import gc
 
 magic_dict = {
     b"\x1f\x8b\x08": (gzip.open, 'rb'),
@@ -85,12 +86,13 @@ class MLST(object):
             if self.descarted:
                 # If any allele has Ns or is broken in 2 contigs, do not determine STs
                 self.ST = '-'
-            self.str_st = self.str_allelic_profile()
+            self.str_st, self.dict_st = self.str_allelic_profile()
 
         # Release Ram!
         del self.fasta_opened
         del self.scheme_number
         del self.blast
+        gc.collect()
 
     def __repr__(self,):
         return '{}–ST: {}'.format(self.beautiname, self.STnumber)
@@ -116,7 +118,7 @@ class MLST(object):
 
     def make_blast(self,):
         # fastmlst dont use blast culling_limit option
-        # fastmlst order the blast output baced on calculate coverage
+        # fastmlst order the blast output based on calculate coverage
         blastn_cline = NcbiblastnCommandline(
             db=str(pathdb) + '/mlst.fasta', dust='no',
             outfmt='"6 sseqid slen sstrand sstart send length ' +
@@ -200,9 +202,13 @@ class MLST(object):
                                                  self.scheme, self.ST,
                                                  self.sep)
             self.STnumber = self.ST
+            dictofrows = {'Genome': self.beautiname,
+                          'Scheme': self.scheme,
+                          'ST': self.ST}
             for i in sorted(self.score['scheme'].keys()):
                 out = '{0}({1}){2}'.format(i, self.score['scheme'][i],
                                            self.sep)
+                dictofrows[i] = self.score['scheme'][i]
                 output += out
             output = output.strip(self.sep)
         else:
@@ -211,17 +217,21 @@ class MLST(object):
                                                  self.ST.index.values[0],
                                                  self.sep)
             self.STnumber = self.ST.index.values[0]
+            dictofrows = {'Genome': self.beautiname,
+                          'Scheme': self.scheme,
+                          'ST': self.ST.index.values[0]}
             for i in sorted(self.score['scheme'].keys()):
                 out = '{0}({1}){2}'.format(i, self.score['scheme'][i],
                                            self.sep)
+                dictofrows[i] = self.score['scheme'][i]
                 output += out
             for i in self.ST.iloc[: , [self.number_alleles, ]]:
                 out = '{0}({1}){2}'.format(i, self.ST[i].values[0],
                                            self.sep)
+                dictofrows[i] = self.ST[i].values[0]
                 output += out
-
             output = output.strip(self.sep)
-        return output
+        return (output, dictofrows)
 
     def is_context_complete(self, length, start, end):
         if start < 0 or end < 0:

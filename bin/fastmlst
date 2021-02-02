@@ -16,6 +16,7 @@ from fastmlst.mlst import MLST
 from codecs import decode
 from tqdm import tqdm  # pip3 install tqdm
 from pathlib import Path
+import pandas as pd
 from re import compile
 
 def unescaped_str(arg_str):
@@ -47,7 +48,7 @@ def runMLST(margument):
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.9'
+    V = '%(prog)s v0.0.10'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -84,6 +85,10 @@ if __name__ == '__main__':
     parser.add_argument('--longheader', action='store_true',
                         help='If --longheader is invoked, the header of FASTA' +
                         ' file contain a long description')
+    parser.add_argument('--legacy', action='store_true',
+                        help='If --legacy is invoked, the csv reported contain the gene name' +
+                        ' and the allele id in the row [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)].' +
+                        ' This option is only available when the --scheme is defined')
     parser.add_argument('-n', '--novel', type=str,
                         help='File name of the novel alleles')
     parser.add_argument('-V', '--version', action='version',
@@ -158,6 +163,7 @@ if __name__ == '__main__':
     fastaconcat = []
     fastanovelconcat = []
     str_alleles = ''
+    dict_alleles = []
     for genome in genome_mlst:
         # only export if
         # 1. Allele not contain Ns
@@ -194,6 +200,7 @@ if __name__ == '__main__':
                         fastanovelconcat.append(seq)
             str_alleles += genome.str_st
             str_alleles += '\n'
+            dict_alleles.append(genome.dict_st)
     if args.fasta2line:
         SeqIO.write(fastaconcat, args.fastaoutput, 'fasta-2line')
         if args.novel:
@@ -205,6 +212,20 @@ if __name__ == '__main__':
 
     # output formated
     if type(args.tableoutput) == str:
-        print(str_alleles[:-1], file=open(args.tableoutput, 'w'))
+        if args.scheme != None:
+            if args.legacy:
+                print(str_alleles[:-1], file=open(args.tableoutput, 'w'))
+            else:
+                df = pd.DataFrame(dict_alleles)
+                df.to_csv(f'{args.tableoutput}', index=False, sep=args.separator)
+        else:
+            print(str_alleles[:-1], file=open(args.tableoutput, 'w'))
     else:
-        print(str_alleles[:-1], file=args.tableoutput)
+        if args.scheme != None:
+            if args.legacy:
+                print(str_alleles[:-1], file=args.tableoutput)
+            else:
+                df = pd.DataFrame(dict_alleles)
+                print(df.to_csv(index=False, sep=args.separator))
+        else:
+            print(str_alleles[:-1], file=args.tableoutput)
