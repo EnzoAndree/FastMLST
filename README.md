@@ -5,6 +5,8 @@
 A multi-core Multilocus Sequence Typing tool coupled with allele concatenation.
 # Introduction
 FastMLST is a high speed standalone script wrote in Python3, which takes assemblies in FASTA format (gzipped is also allowed) and determines its ST according to MLST schemes defined in [PubMLST](https://doi.org/10.12688/wellcomeopenres.14826.1). The main advantage over other ST determination programs is that FastMLST allows the generation of a FASTA file containing the concatenated alleles for all analyzed genomes ready to be aligned and used in phylogenetic inference.
+
+You can read a complete guide to MLST analysis in our [Wiki](https://github.com/EnzoAndree/FastMLST/wiki/The-definitive-guide-to-MLST-analysis).
 # Installation
 Currently the only way to install this script is using Conda.
 ```bash
