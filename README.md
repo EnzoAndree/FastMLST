@@ -169,3 +169,10 @@ If you use FastMLST in your publication, I could recommend the following sentenc
 The ST determination was done using FastMLST (https://github.com/EnzoAndree/FastMLST) in combination with the [PubMLST](https://doi.org/10.12688/wellcomeopenres.14826.1) database. The alleles of the scheme were concatenated in alphabetical order.
 
 It is currently unpublished, but we are doing our best to get this paper out.
+
+For now, you could cite this [pre-print](https://www.biorxiv.org/content/10.1101/2020.10.13.338517v2) where we analyze the speed of FastMLST:
+
+FastMLST: A multi-core tool for multilocus sequence typing of draft genome assemblies.
+Enzo Guerrero-Araya, Marina Muñoz, César Rodríguez, Daniel Paredes-Sabja
+bioRxiv 2020.10.13.338517; doi: https://doi.org/10.1101/2020.10.13.338517
+
