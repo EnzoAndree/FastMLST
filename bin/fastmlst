@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # Verbose?
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s@%(name)s: %(message)s')
     ch = logging.StreamHandler()
-    split_namefromcode = compile(r'(?P<gene>[a-zA-Z]+)(?P<novel>~?)(?P<number>\d+)(?P<partial>\??)')
+    split_namefromcode = compile(r'(?P<gene>[a-zA-Z0-9]+)(?P<novel>~?)(?P<number>\d+)(?P<partial>\??)') # OMG genename can be alphanumeric
 
     if args.verbose == 0:
         logging.basicConfig(level=logging.WARNING,
