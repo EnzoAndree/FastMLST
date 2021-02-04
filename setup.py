@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='fastmlst',
-    version='0.0.10',
+    version='0.0.11',
     description='A multi-core tool for multilocus sequence typing of draft genome assemblies using PubMLST typing schemes',
     url='https://github.com/EnzoAndree/FastMLST',
     author='Enzo Guerrero-Araya',

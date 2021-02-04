@@ -220,12 +220,7 @@ class MLST(object):
             dictofrows = {'Genome': self.beautiname,
                           'Scheme': self.scheme,
                           'ST': self.ST.index.values[0]}
-            for i in sorted(self.score['scheme'].keys()):
-                out = '{0}({1}){2}'.format(i, self.score['scheme'][i],
-                                           self.sep)
-                dictofrows[i] = self.score['scheme'][i]
-                output += out
-            for i in self.ST.iloc[: , [self.number_alleles, ]]:
+            for i in self.ST:
                 out = '{0}({1}){2}'.format(i, self.ST[i].values[0],
                                            self.sep)
                 dictofrows[i] = self.ST[i].values[0]
