@@ -48,7 +48,7 @@ def runMLST(margument):
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.11'
+    V = '%(prog)s v0.0.12'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -64,9 +64,9 @@ if __name__ == '__main__':
                         help='Set a scheme target (I am not dumb, let me choose a scheme by myself!)')
     parser.add_argument('--scheme-list', action='store_true',
                         help='Show all schemes supported')
-    parser.add_argument('-fo', '--fastaoutput', type=str, default='mlst.fasta',
+    parser.add_argument('-fo', '--fastaoutput', type=str, default='',
                         help='File name of the concatenated alleles output' +
-                        ' (default mlst.fasta)')
+                        ' (default "")')
     parser.add_argument('-to', '--tableoutput', type=str, default=stdout,
                         help='File name of the MLST table output' +
                         ' (default STDOUT)')
@@ -201,14 +201,15 @@ if __name__ == '__main__':
             str_alleles += genome.str_st
             str_alleles += '\n'
             dict_alleles.append(genome.dict_st)
-    if args.fasta2line:
-        SeqIO.write(fastaconcat, args.fastaoutput, 'fasta-2line')
-        if args.novel:
-            SeqIO.write(fastanovelconcat, args.novel, 'fasta-2line')
-    else:
-        SeqIO.write(fastaconcat, args.fastaoutput, 'fasta')
-        if args.novel:
-            SeqIO.write(fastanovelconcat, args.novel, 'fasta')
+    # FastMLSTv0.0.12 by default do not write the fasta file 
+        if args.fasta2line and args.fastaoutput != '':
+            SeqIO.write(fastaconcat, args.fastaoutput, 'fasta-2line')
+            if args.novel:
+                SeqIO.write(fastanovelconcat, args.novel, 'fasta-2line')
+        elif args.fastaoutput != '':
+            SeqIO.write(fastaconcat, args.fastaoutput, 'fasta')
+            if args.novel:
+                SeqIO.write(fastanovelconcat, args.novel, 'fasta')
 
     # output formated
     if type(args.tableoutput) == str:

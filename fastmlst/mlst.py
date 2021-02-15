@@ -146,6 +146,8 @@ class MLST(object):
         dfblast['coverage'] = (dfblast.length - dfblast.gaps) / dfblast.slen
         dfblast['identity'] = (dfblast.nident - dfblast.gaps) / dfblast.slen # this is a 'global' %identity
         dfblast[toint] = dfblast[toint].astype(int)
+        # Bug Fixed on FastMLSTv0.0.12: The contigs identifier of some assemblers like unicycler is just a number, I opted to standardize all searches using strings
+        dfblast['qseqid'] = dfblast['qseqid'].astype(str)
         # don't even look at the hits below these cov's and identities
         dfblast = dfblast.loc[(dfblast['coverage'] <= 1) & (dfblast['coverage'] >= self.coverage) & (dfblast['identity'] >= self.identity)] # insertions can not be processed properly yet
         # dfblast = dfblast.loc[dfblast['slen'] >= dfblast['length']] # if have an insertion slen < length
