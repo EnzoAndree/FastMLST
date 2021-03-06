@@ -126,7 +126,7 @@ RT106_Liv22.fasta,cdifficile,42,1,1,2,1,1,7,1,1.0
 ```
 $ ls splited_mlst/
 adk.fasta  atpA.fasta  dxr.fasta  glyA.fasta  recA.fasta  sodA.fasta  tpi.fasta
-cat splited_mlst/adk.fasta
+$ cat splited_mlst/adk.fasta
 >RT001_BI9.fasta adk
 CATATATCAACAGGAGATATATTCAGAAAGAATATAAAAGAGGGAACAGAACTTGGAAAA
 AAAGCTAAAGAATACATGGACCAAGGTTTATTAGTACCAGATGAGTTAACTGTAGGTTTA
