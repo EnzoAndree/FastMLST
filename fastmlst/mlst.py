@@ -207,7 +207,7 @@ class MLST(object):
             dictofrows = {'Genome': self.beautiname,
                           'Scheme': self.scheme,
                           'ST': self.ST}
-            for i in sorted(self.score['scheme'].keys()):
+            for i in self.score['scheme'].keys():
                 out = '{0}({1}){2}'.format(i, self.score['scheme'][i],
                                            self.sep)
                 dictofrows[i] = self.score['scheme'][i]
@@ -336,7 +336,7 @@ class MLST(object):
         if self.longheader:
             header = self.beautiname + ' '
             concatenatedseq = ''
-            for genename in sorted(self.alleles):
+            for genename in self.name_alleles:
                 header += genename + '_'
                 concatenatedseq += self.alleles[genename].seq
             record_out = SeqRecord(concatenatedseq, id=header.strip('_'),
@@ -344,7 +344,7 @@ class MLST(object):
                                    'from ' + self.beautiname)
         else:
             concatenatedseq = ''
-            for genename in sorted(self.alleles):
+            for genename in self.name_alleles:
                 concatenatedseq += self.alleles[genename].seq
             record_out = SeqRecord(concatenatedseq, id=self.beautiname,
                 description='')

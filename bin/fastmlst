@@ -18,6 +18,7 @@ from tqdm import tqdm  # pip3 install tqdm
 from pathlib import Path
 import pandas as pd
 from re import compile
+from collections import defaultdict
 
 def unescaped_str(arg_str):
     return decode(str(arg_str), 'unicode_escape')
@@ -48,7 +49,7 @@ def runMLST(margument):
 
 
 if __name__ == '__main__':
-    V = '%(prog)s v0.0.13'
+    V = '%(prog)s v0.0.14'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
@@ -80,6 +81,9 @@ if __name__ == '__main__':
                         ' \'similar\' [~] (default 95%%)')
     parser.add_argument('--update-mlst', action='store_true',
                         help='Perform an update of the PubMLST database')
+    parser.add_argument('-sp', '--splited-output', type=str, default='',
+                        help='Directory output for splited alleles' +
+                        ' (default "")')
     parser.add_argument('--fasta2line', action='store_true',
                         help='The fasta files will be in fasta2line format')
     parser.add_argument('--longheader', action='store_true',
@@ -161,6 +165,7 @@ if __name__ == '__main__':
             genome_mlst.append(result)
     # Show the shcheme list and exit
     fastaconcat = []
+    fastasplited = defaultdict(list)
     fastanovelconcat = []
     str_alleles = ''
     dict_alleles = []
@@ -178,6 +183,17 @@ if __name__ == '__main__':
                and not genome.contamination\
                and not genome.allelemissing:
                 fastaconcat.append(genome.concat_alleles)
+                # splited alleles
+                if args.splited_output != '':
+                    for allele in genome.name_alleles:
+                        fasta = genome.alleles[allele]
+                        fasta.id = genome.beautiname
+                        fasta.description = allele
+                        if allele not in fastasplited.keys():
+                            fastasplited[allele].append(fasta)
+                        else:
+                            fastasplited[allele].append(fasta)
+
                 if args.novel and genome.novel_alleles:
                     for novelallele in genome.novel_alleles:
                         genenovel = split_namefromcode.search(novelallele)
@@ -210,7 +226,17 @@ if __name__ == '__main__':
         SeqIO.write(fastaconcat, args.fastaoutput, 'fasta')
         if args.novel:
             SeqIO.write(fastanovelconcat, args.novel, 'fasta')
-
+    # Novel output in version v0.0.14
+    if args.fasta2line and args.splited_output != '':
+        spout = Path(args.splited_output)
+        spout.mkdir(exist_ok=True, parents=True)
+        for gene, fastalist in fastasplited.items():
+            SeqIO.write(fastaconcat, f'{spout.absolute()}/{gene}.fasta', 'fasta-2line')
+    elif args.splited_output != '':
+        spout = Path(args.splited_output)
+        spout.mkdir(exist_ok=True, parents=True)
+        for gene, fastalist in fastasplited.items():
+            SeqIO.write(fastalist, f'{spout.absolute()}/{gene}.fasta', 'fasta')
     # output formated
     if type(args.tableoutput) == str:
         if args.scheme != None:

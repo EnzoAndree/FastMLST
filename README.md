@@ -31,18 +31,18 @@ $ fastmlst cdiff_refferences/RT078_CDM120.fasta.gz
 RT078_CDM120.fasta.gz,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
 
 $ fastmlst cdiff_refferences/*.fasta
-RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
 RT001_BI9.fasta,cdifficile,3,adk(1),atpA(1),dxr(2),glyA(1),recA(1),sodA(1),tpi(1),mlst_clade(1.0)
 RT001_Liv24.fasta,cdifficile,3,adk(1),atpA(1),dxr(2),glyA(1),recA(1),sodA(1),tpi(1),mlst_clade(1.0)
-RT017_CF5.fasta,cdifficile,86,adk(3),atpA(7),dxr(3),glyA(8),recA(6),sodA(19),tpi(11),mlst_clade(4.0)
-RT015_TL174.fasta,cdifficile,44,adk(2),atpA(5),dxr(2),glyA(1),recA(1),sodA(3),tpi(1),mlst_clade(1.0)
-RT027_CD196.fasta,cdifficile,1,adk(1),atpA(1),dxr(1),glyA(10),recA(1),sodA(3),tpi(5),mlst_clade(2.0)
 RT002_TL178.fasta,cdifficile,8,adk(1),atpA(1),dxr(2),glyA(6),recA(1),sodA(5),tpi(1),mlst_clade(1.0)
 RT012_CD630_chr_V12.fasta,cdifficile,54,adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3),mlst_clade(1.0)
-RT023_CD305.fasta,cdifficile,-,adk(~1),atpA(1),dxr(4),glyA(7),recA(2),sodA(8),tpi(7)
 RT014_TL176_v3.fasta,cdifficile,13,adk(1),atpA(1),dxr(6),glyA(1),recA(5),sodA(3),tpi(1),mlst_clade(1.0)
-RT027_R20291_July2013.fasta,cdifficile,1,adk(1),atpA(1),dxr(1),glyA(10),recA(1),sodA(3),tpi(5),mlst_clade(2.0)
+RT015_TL174.fasta,cdifficile,44,adk(2),atpA(5),dxr(2),glyA(1),recA(1),sodA(3),tpi(1),mlst_clade(1.0)
+RT017_CF5.fasta,cdifficile,86,adk(3),atpA(7),dxr(3),glyA(8),recA(6),sodA(19),tpi(11),mlst_clade(4.0)
 RT017_M68.fasta,cdifficile,37,adk(3),atpA(7),dxr(3),glyA(8),recA(6),sodA(9),tpi(11),mlst_clade(4.0)
+RT023_CD305.fasta,cdifficile,791,adk(65),atpA(1),dxr(4),glyA(7),recA(2),sodA(8),tpi(7),mlst_clade(nan)
+RT027_CD196.fasta,cdifficile,1,adk(1),atpA(1),dxr(1),glyA(10),recA(1),sodA(3),tpi(5),mlst_clade(2.0)
+RT027_R20291_July2013.fasta,cdifficile,1,adk(1),atpA(1),dxr(1),glyA(10),recA(1),sodA(3),tpi(5),mlst_clade(2.0)
+RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
 RT106_Liv22.fasta,cdifficile,42,adk(1),atpA(1),dxr(2),glyA(1),recA(1),sodA(7),tpi(1),mlst_clade(1.0)
 ```
 # Usage
@@ -63,7 +63,7 @@ $ fastmlst cdiff_refferences/RT078_CDM120.fasta > mlst.csv
 ```
 Both options generate the `mlst.csv` file containing the FastMLST result.
 
-FastMLST will always try to generate a file in FASTA format (mlst.fasta by default) with the alleles concatenated in alphabetical order from the MLST scheme. If any genome is not found in this result, it means that (1) Allele contain Ns, (2) alleles missing or (3) contamination (multiple alleles for one genome). Optionally the name could be modified with `-fo` option:
+FastMLST is able to generate a file in FASTA format with the alleles concatenated in the same way as they are in PubMLST. If any genome is not found in this result, it means that (1) Allele contain Ns, (2) alleles missing or (3) contamination (multiple alleles for one genome). Optionally the name could be modified with `-fo` option:
 ```
 $ fastmlst cdiff_refferences/RT078_CDM120.fasta
 ```
@@ -103,6 +103,55 @@ There are 153 schemes (A round of applause to @keithajolley! (Jolley, et al., 20
 (153) yruckeri: Yersinia ruckeri
 ```
 
+A new option in version v0.0.14 is the possibility to obtain the alleles divided into individual FASTA files (one for each allele in the scheme), ready to be used in other programs such as MLSTest.
+
+```
+$ fastmlst --scheme cdifficile cdiff_refferences/*.fasta --splited-output splited_mlst
+Genome,Scheme,ST,adk,atpA,dxr,glyA,recA,sodA,tpi,mlst_clade
+RT001_BI9.fasta,cdifficile,3,1,1,2,1,1,1,1,1.0
+RT001_Liv24.fasta,cdifficile,3,1,1,2,1,1,1,1,1.0
+RT002_TL178.fasta,cdifficile,8,1,1,2,6,1,5,1,1.0
+RT012_CD630_chr_V12.fasta,cdifficile,54,1,4,7,1,1,3,3,1.0
+RT014_TL176_v3.fasta,cdifficile,13,1,1,6,1,5,3,1,1.0
+RT015_TL174.fasta,cdifficile,44,2,5,2,1,1,3,1,1.0
+RT017_CF5.fasta,cdifficile,86,3,7,3,8,6,19,11,4.0
+RT017_M68.fasta,cdifficile,37,3,7,3,8,6,9,11,4.0
+RT023_CD305.fasta,cdifficile,791,65,1,4,7,2,8,7,
+RT027_CD196.fasta,cdifficile,1,1,1,1,10,1,3,5,2.0
+RT027_R20291_July2013.fasta,cdifficile,1,1,1,1,10,1,3,5,2.0
+RT078_CDM120.fasta,cdifficile,11,5,8,5,11,9,11,8,5.0
+RT106_Liv22.fasta,cdifficile,42,1,1,2,1,1,7,1,1.0
+```
+
+```
+$ ls splited_mlst/
+adk.fasta  atpA.fasta  dxr.fasta  glyA.fasta  recA.fasta  sodA.fasta  tpi.fasta
+cat splited_mlst/adk.fasta
+>RT001_BI9.fasta adk
+CATATATCAACAGGAGATATATTCAGAAAGAATATAAAAGAGGGAACAGAACTTGGAAAA
+AAAGCTAAAGAATACATGGACCAAGGTTTATTAGTACCAGATGAGTTAACTGTAGGTTTA
+GTTACTGATAGAATATCTCAAGAAGATTGTAAAAATGGATTTATGTTAGATGGATTTCCA
+AGAAATGTAGCACAAGGAGAACATTTAGATATCTTCTTAAAAAATGCTGGTATATCACTA
+GATAAAGTTGTCAATATTGAAGTTGATAAGAGTATATTAGTGTCTAGAGCAGTTGGTAGA
+AGAATATGTAAGTCTTGTGGAGCTACTTACCATGTTGAGTTTAATCCTCCTAAAGTAGAA
+GGTGTATGTGATGTATGCCAAGGAGAATTATATCAAAGAGCTGATGATAATGAAGAAACT
+GTATCTAAGAGAATACAAGTTTATCTAGATGAAACTAAGCCTTTAGTAGATTATTATAGC
+AAACAAGGTATAATAGCAGAT
+...
+>RT106_Liv22.fasta adk
+CATATATCAACAGGAGATATATTCAGAAAGAATATAAAAGAGGGAACAGAACTTGGAAAA
+AAAGCTAAAGAATACATGGACCAAGGTTTATTAGTACCAGATGAGTTAACTGTAGGTTTA
+GTTACTGATAGAATATCTCAAGAAGATTGTAAAAATGGATTTATGTTAGATGGATTTCCA
+AGAAATGTAGCACAAGGAGAACATTTAGATATCTTCTTAAAAAATGCTGGTATATCACTA
+GATAAAGTTGTCAATATTGAAGTTGATAAGAGTATATTAGTGTCTAGAGCAGTTGGTAGA
+AGAATATGTAAGTCTTGTGGAGCTACTTACCATGTTGAGTTTAATCCTCCTAAAGTAGAA
+GGTGTATGTGATGTATGCCAAGGAGAATTATATCAAAGAGCTGATGATAATGAAGAAACT
+GTATCTAAGAGAATACAAGTTTATCTAGATGAAACTAAGCCTTTAGTAGATTATTATAGC
+AAACAAGGTATAATAGCAGAT
+```
+
+
+
 ## Output symbology
 
 Symbol | Meaning | Length | Identity
@@ -130,9 +179,10 @@ $ fastmlst --update-mlst -t 24
 ```
 # Complete usage Options
 ```
-usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE]
-                [-pid IDENTITY] [--update-mlst] [--fasta2line] [--longheader] [-n NOVEL] [-V]
-                [genomes [genomes ...]]
+usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [-fo FASTAOUTPUT]
+                [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst] [-sp SPLITED_OUTPUT] [--fasta2line]
+                [--longheader] [--legacy] [-n NOVEL] [-V]
+                [genomes ...]
 
 positional arguments:
   genomes
@@ -149,7 +199,7 @@ optional arguments:
                         Set a scheme target (I am not dumb, let me choose a scheme by myself!)
   --scheme-list         Show all schemes supported
   -fo FASTAOUTPUT, --fastaoutput FASTAOUTPUT
-                        File name of the concatenated alleles output (default mlst.fasta)
+                        File name of the concatenated alleles output (default "")
   -to TABLEOUTPUT, --tableoutput TABLEOUTPUT
                         File name of the MLST table output (default STDOUT)
   -cov COVERAGE, --coverage COVERAGE
@@ -157,10 +207,13 @@ optional arguments:
   -pid IDENTITY, --identity IDENTITY
                         DNA %Identity of full allelle to consider 'similar' [~] (default 95%)
   --update-mlst         Perform an update of the PubMLST database
+  -sp SPLITED_OUTPUT, --splited-output SPLITED_OUTPUT
+                        Directory output for splited alleles (default "")
   --fasta2line          The fasta files will be in fasta2line format
   --longheader          If --longheader is invoked, the header of FASTA file contain a long description
   --legacy              If --legacy is invoked, the csv reported contain the gene name and the allele id in the row
-                        [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)]. This option is only available when the --scheme is defined
+                        [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)]. This option is only available when the
+                        --scheme is defined
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
   -V, --version         Show program's version number and exit
