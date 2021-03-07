@@ -188,7 +188,7 @@ if __name__ == '__main__':
                     for allele in genome.name_alleles:
                         fasta = genome.alleles[allele]
                         fasta.id = genome.beautiname
-                        fasta.description = allele
+                        fasta.description = f'{allele}({genome.dict_st[allele]})'
                         if allele not in fastasplited.keys():
                             fastasplited[allele].append(fasta)
                         else:
