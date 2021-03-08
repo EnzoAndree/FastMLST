@@ -337,15 +337,17 @@ class MLST(object):
             header = self.beautiname + ' '
             concatenatedseq = ''
             for genename in self.name_alleles:
-                header += genename + '_'
-                concatenatedseq += self.alleles[genename].seq
+                if genename in self.alleles.keys():
+                    header += genename + '_'
+                    concatenatedseq += self.alleles[genename].seq
             record_out = SeqRecord(concatenatedseq, id=header.strip('_'),
                                    description='Concatenated Sequences of MLST ' +
                                    'from ' + self.beautiname)
         else:
             concatenatedseq = ''
             for genename in self.name_alleles:
-                concatenatedseq += self.alleles[genename].seq
+                if genename in self.alleles.keys():
+                    concatenatedseq += self.alleles[genename].seq
             record_out = SeqRecord(concatenatedseq, id=self.beautiname,
                 description='')
         return record_out
