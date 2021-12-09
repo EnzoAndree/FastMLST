@@ -219,15 +219,5 @@ optional arguments:
   -V, --version         Show program's version number and exit
 ```
 # Citation
-If you use FastMLST in your publication, I could recommend the following sentence in methodology:
 
-The ST determination was done using FastMLST (https://github.com/EnzoAndree/FastMLST) in combination with the [PubMLST](https://doi.org/10.12688/wellcomeopenres.14826.1) database. The alleles of the scheme were concatenated in alphabetical order.
-
-It is currently unpublished, but we are doing our best to get this paper out.
-
-For now, you could cite this [pre-print](https://www.biorxiv.org/content/10.1101/2020.10.13.338517v2) where we analyze the speed of FastMLST:
-
-FastMLST: A multi-core tool for multilocus sequence typing of draft genome assemblies.
-Enzo Guerrero-Araya, Marina Muñoz, César Rodríguez, Daniel Paredes-Sabja
-bioRxiv 2020.10.13.338517; doi: https://doi.org/10.1101/2020.10.13.338517
-
+Guerrero-Araya E, Muñoz M, Rodríguez C, Paredes-Sabja D. FastMLST: A Multi-core Tool for Multilocus Sequence Typing of Draft Genome Assemblies. Bioinform Biol Insights. 2021 Nov 27;15:11779322211059238. doi: [10.1177/11779322211059238](https://doi.org/10.1177/11779322211059238). PMID: 34866905; PMCID: [PMC8637782](http://www.ncbi.nlm.nih.gov/pmc/articles/pmc8637782/).
