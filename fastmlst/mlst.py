@@ -158,10 +158,10 @@ class MLST(object):
             return None
         else:
             dfblast = dfblast.join(
-                dfblast['sseqid'].str.split('.', 1, expand=True).
+                dfblast['sseqid'].str.split('.', n=1, expand=True).
                 rename(columns={0: 'scheme', 1: 'genenumber'}))
             dfblast = dfblast.join(
-                dfblast['genenumber'].str.rsplit('_', 1, expand=True).
+                dfblast['genenumber'].str.rsplit('_', n=1, expand=True).
                 rename(columns={0: 'gene', 1: 'number'}))
             dfblast = dfblast.drop(['sseqid', 'genenumber'], axis=1)
             dfblast['genome_id'] = self.beautiname
@@ -362,7 +362,7 @@ class MLST(object):
             exit()
         # check completeness, perfect identity, snp identity,
         rank_list = defaultdict(dict)
-        for scheme, group in self.blast.groupby(['scheme']):
+        for scheme, group in self.blast.groupby('scheme'):
             rank_list[scheme] = defaultdict(dict)
             rank_list[scheme]['score'] = 0
             rank_list[scheme]['scheme'] = defaultdict()
