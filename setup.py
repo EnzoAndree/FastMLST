@@ -9,7 +9,7 @@ setup(name='fastmlst',
     license='GPLv3',
     packages=['fastmlst'],
     install_requires=['tqdm',
-                      'pandas>=2.0',
+                      'pandas',
                       'biopython'],
     scripts=['bin/fastmlst'],
     zip_safe=False)
