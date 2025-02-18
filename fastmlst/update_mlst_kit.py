@@ -12,12 +12,21 @@ from multiprocessing.pool import ThreadPool
 from tqdm import tqdm  # pip3 install tqdm
 from urllib.request import urlretrieve
 from pathlib import Path
+import os
+
+# Define the path to the .cache directory in the user's home directory
+home_dir = Path.home()
+cache_dir = home_dir / '.cache' / 'fastmlst'
+
+# Ensure the cache directory exists
+cache_dir.mkdir(parents=True, exist_ok=True)
+
+# Update pathdb to use the new cache directory
+pathdb = cache_dir / 'pubmlst'
+
+necessary_file = ['mlst.fasta.nhr', 'mlst.fasta.nsq', 'mlst.fasta.nin']
 
 logger = logging.getLogger('update_mlst')
-
-pathdb = Path(str(Path(__file__).parent.absolute()) + '/' + 'pubmlst')
-necessary_file = ['mlst.fasta.nhr', 'mlst.fasta.nsq', 'mlst.fasta.nin',
-                  'scheme_number.pkl']
 
 
 def save_obj(obj, name):

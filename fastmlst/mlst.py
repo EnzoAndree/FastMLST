@@ -113,7 +113,7 @@ class MLST(object):
             #         else:
             #             self.contamination = True
             elif '~' in value or '?' in value:
-                self.novel_alleles.append(locus + value)
+                self.novel_alleles.append(f'{locus}({value})')
 
 
     def make_blast(self,):
