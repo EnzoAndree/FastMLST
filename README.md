@@ -7,12 +7,20 @@ FastMLST is a high speed standalone script wrote in Python3, which takes assembl
 
 You can read a complete guide to MLST analysis in our [Wiki](https://github.com/EnzoAndree/FastMLST/wiki/The-definitive-guide-to-MLST-analysis).
 # Installation
-Currently the only way to install this script is using Conda.
+You can install FastMLST using either Conda or pip. If you want the most up-to-date version, you can install it directly from GitHub using pip.
+
+### Using Conda
 ```bash
 conda config --add channels defaults
 conda config --add channels conda-forge
 conda config --add channels bioconda
 conda install fastmlst
+```
+
+### Using pip for the latest version
+To install the latest version directly from GitHub, use the following command:
+```bash
+pip install git+https://github.com/EnzoAndree/FastMLST.git
 ```
 ## Dependencies
 It is expected that all dependencies will be resolved when using conda for installation.
