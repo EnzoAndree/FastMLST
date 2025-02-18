@@ -1,4 +1,5 @@
-![Conda](https://img.shields.io/conda/pn/bioconda/fastmlst)![CircleCI](https://img.shields.io/circleci/build/github/EnzoAndree/FastMLST/master)![GitHub](https://img.shields.io/github/license/EnzoAndree/FastMLST)[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/fastmlst/README.html)[![Downloads](https://img.shields.io/conda/dn/bioconda/fastmlst.svg?style=flat)](http://bioconda.github.io/recipes/fastmlst/README.html)![Citations](./citations_badge.md)
+![Conda](https://img.shields.io/conda/pn/bioconda/fastmlst)![CircleCI](https://img.shields.io/circleci/build/github/EnzoAndree/FastMLST/master)![GitHub](https://img.shields.io/github/license/EnzoAndree/FastMLST)[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/fastmlst/README.html)[![Downloads](https://img.shields.io/conda/dn/bioconda/fastmlst.svg?style=flat)](http://bioconda.github.io/recipes/fastmlst/README.html)
+![Citations](./citations_badge.md)
 
 # FastMLST
 A multi-core Multilocus Sequence Typing tool coupled with allele concatenation.
