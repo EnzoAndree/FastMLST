@@ -49,7 +49,7 @@ def runMLST(margument):
 
 
 def main():
-    V = '%(prog)s v0.0.17'
+    V = '%(prog)s v0.0.18'
     parser = argparse.ArgumentParser()
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),

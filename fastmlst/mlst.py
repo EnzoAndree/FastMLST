@@ -4,7 +4,6 @@ from fastmlst.update_mlst_kit import pathdb
 import logging
 from fastmlst.update_mlst_kit import load_obj
 from collections import defaultdict
-from Bio.Blast.Applications import NcbiblastnCommandline
 from sys import exit
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -14,6 +13,7 @@ from pathlib import Path
 import gzip
 import bz2
 import gc
+import subprocess
 
 magic_dict = {
     b"\x1f\x8b\x08": (gzip.open, 'rb'),
@@ -117,17 +117,21 @@ class MLST(object):
 
 
     def make_blast(self,):
-        # fastmlst dont use blast culling_limit option
-        # fastmlst order the blast output based on calculate coverage
-        blastn_cline = NcbiblastnCommandline(
-            db=str(pathdb) + '/mlst.fasta', dust='no',
-            outfmt='"6 sseqid slen sstrand sstart send length ' +
-            'nident gaps qseqid qstart qend"',
-            max_target_seqs=130000,
-            evalue=1E-20, ungapped=False)
-        self.blastn_cli = str(blastn_cline)
+        # Build the BLAST command without using the deprecated Bio.Blast.Application wrappers
+        cmd = [
+            "blastn",
+            "-db", str(pathdb) + '/mlst.fasta',
+            "-dust", "no",
+            "-outfmt", "6 sseqid slen sstrand sstart send length nident gaps qseqid qstart qend",
+            "-max_target_seqs", "130000",
+            "-evalue", "1E-20",
+            "-ungapped"
+        ]
+        self.blastn_cli = " ".join(cmd)
         logger.debug(self.blastn_cli + ' < ' + self.fasta)
-        out, err = blastn_cline(stdin=self.fasta_opened)
+        result = subprocess.run(cmd, input=self.fasta_opened, text=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = result.stdout, result.stderr
         if out == '':
             logger.warning(f'There is no result for: {self.blastn_cli} < {self.fasta}')
             return None
