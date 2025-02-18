@@ -14,6 +14,20 @@ from urllib.request import urlretrieve
 from pathlib import Path
 import os
 
+logger = logging.getLogger('update_mlst')
+
+# NEW: Define a function to override the default database location
+def set_pathdb(custom_path):
+    """
+    Override the default PubMLST database directory.
+
+    Parameters:
+        custom_path (str): Custom path for the MLST database directory.
+    """
+    global pathdb
+    pathdb = Path(custom_path)
+    pathdb.mkdir(parents=True, exist_ok=True)
+
 # Define the path to the .cache directory in the user's home directory
 home_dir = Path.home()
 cache_dir = home_dir / '.cache' / 'fastmlst'
@@ -21,12 +35,10 @@ cache_dir = home_dir / '.cache' / 'fastmlst'
 # Ensure the cache directory exists
 cache_dir.mkdir(parents=True, exist_ok=True)
 
-# Update pathdb to use the new cache directory
+# Default pathdb points to the pubmlst folder in the default cache
 pathdb = cache_dir / 'pubmlst'
 
 necessary_file = ['mlst.fasta.nhr', 'mlst.fasta.nsq', 'mlst.fasta.nin']
-
-logger = logging.getLogger('update_mlst')
 
 
 def save_obj(obj, name):

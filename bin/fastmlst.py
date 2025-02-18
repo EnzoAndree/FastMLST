@@ -20,6 +20,7 @@ import pandas as pd
 from re import compile
 from collections import defaultdict
 import multiprocessing
+import fastmlst.update_mlst_kit as update_mlst_kit
 
 def unescaped_str(arg_str):
     return decode(str(arg_str), 'unicode_escape')
@@ -49,8 +50,10 @@ def runMLST(margument):
 
 
 def main():
-    V = '%(prog)s v0.0.18'
-    parser = argparse.ArgumentParser()
+    V = '%(prog)s v0.0.19'
+    parser = argparse.ArgumentParser(
+        description='⚡️🧬 FastMLST: A multi-core tool for multilocus sequence typing of draft genome assemblies'
+    )
     parser.add_argument(type=str, nargs='*', dest='genomes')
     parser.add_argument('-t', '--threads', type=int, default=cpu_count(),
                         help='Number of threads to use (default {})'.
@@ -97,7 +100,18 @@ def main():
                         help='File name of the novel alleles')
     parser.add_argument('-V', '--version', action='version',
                         version=V, help='Show program\'s version number and exit')
+    parser.add_argument(
+        '--db_path', 
+        type=str, 
+        default=None,
+        help='Custom directory for MLST database (default: ~/.cache/fastmlst/pubmlst)'
+    )
     args = parser.parse_args()
+
+    # If the user provided a custom database path, update it
+    if args.db_path:
+        update_mlst_kit.set_pathdb(args.db_path)
+
     # Verbose?
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s@%(name)s: %(message)s')
     ch = logging.StreamHandler()
@@ -119,14 +133,13 @@ def main():
                             datefmt='%H:%M:%S')
         logger = logging.getLogger('FastMLST')
     # Check for pubmlst
-    pathdb.mkdir(exist_ok=True, parents=True)
-    is_all_files = all(Path(str(pathdb) + '/' + f).is_file()
-                       for f in necessary_file)
+    update_mlst_kit.pathdb.mkdir(exist_ok=True, parents=True)
+    is_all_files = all((update_mlst_kit.pathdb / f).is_file() for f in necessary_file)
     # If update_mlst is true o any necesary file are missing update pubmlst
     if args.update_mlst or not is_all_files:
         from shutil import rmtree
         from fastmlst.update_mlst_kit import update_mlstdb
-        rmtree(str(pathdb))
+        rmtree(str(update_mlst_kit.pathdb))
         update_mlstdb(args.threads)
         if args.update_mlst:
             exit()
@@ -140,7 +153,7 @@ def main():
     # Check if there are a target scheme
     if args.scheme != None:
         args.scheme = args.scheme.lower()
-        scheme_dir = pathdb/'schemes'
+        scheme_dir = update_mlst_kit.pathdb/'schemes'
         if args.scheme in [d.name for d in scheme_dir.iterdir()]:
             logger.info('Ok my little buddy, i trust your judgment. I will '+
                           f'proceed with the search using only the following scheme: {args.scheme}')

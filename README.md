@@ -150,7 +150,38 @@ GTATCTAAGAGAATACAAGTTTATCTAGATGAAACTAAGCCTTTAGTAGATTATTATAGC
 AAACAAGGTATAATAGCAGAT
 ```
 
+## Custom MLST Database Location
 
+FastMLST now supports configuring a custom location for the PubMLST database. By default, the tool uses a cache directory at `~/.cache/fastmlst/pubmlst`. However, if you prefer to store the database in an alternate location (for example, on a high-performance drive or in a centralized directory), you can override this default path using the `--db_path` command-line argument.
+
+### How It Works
+
+When the `--db_path` option is provided, FastMLST calls a helper function (`set_pathdb`) that:
+- **Overrides the default database path:** The internal global `pathdb` variable is updated to use your specified path.
+- **Ensures the custom directory exists:** The directory is automatically created if it does not exist.
+- **Uses the custom path for all subsequent operations:** All processes (such as fetching, updating, or reading database files) use the new path.
+
+### Usage Example
+
+To run FastMLST with a custom MLST database directory, simply use the `--db_path` option:
+
+```bash
+$ fastmlst --db_path /path/to/your/custom/db [other-options] genomes...
+```
+
+For instance, if you want the MLST database to reside in `/data/fastmlst_db`, run:
+
+```bash
+$ fastmlst --db_path /data/fastmlst_db cdiff_refferences/RT078_CDM120.fasta
+```
+
+### When to Use This Feature
+
+- **Optimizing I/O Performance:** Place the database on a disk with faster read/write speeds.
+- **Managing Disk Usage:** Store the database on a separate partition or drive with more available space.
+- **Custom Deployment Setups:** Particularly useful in multi-user or cluster environments where centralized data management is preferred.
+
+**Note:** Ensure that the directory you specify has proper write permissions. FastMLST will automatically create the directory (and any necessary parent directories) if they do not already exist.
 
 ## Output symbology
 
@@ -179,18 +210,19 @@ $ fastmlst --update-mlst -t 24
 ```
 # Complete usage Options
 ```
-usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [-fo FASTAOUTPUT]
-                [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst] [-sp SPLITED_OUTPUT] [--fasta2line]
-                [--longheader] [--legacy] [-n NOVEL] [-V]
+usage: fastmlst [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [-fo FASTAOUTPUT] [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst]
+                [-sp SPLITED_OUTPUT] [--fasta2line] [--longheader] [--legacy] [-n NOVEL] [-V] [--db_path DB_PATH]
                 [genomes ...]
+
+⚡️🧬 FastMLST: A multi-core tool for multilocus sequence typing of draft genome assemblies
 
 positional arguments:
   genomes
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -t THREADS, --threads THREADS
-                        Number of threads to use (default 12)
+                        Number of threads to use (default 14)
   -v {0,1,2}, --verbose {0,1,2}
                         Verbose output level choices: [0, 1, 2]
   -s SEPARATOR, --separator SEPARATOR
@@ -211,12 +243,12 @@ optional arguments:
                         Directory output for splited alleles (default "")
   --fasta2line          The fasta files will be in fasta2line format
   --longheader          If --longheader is invoked, the header of FASTA file contain a long description
-  --legacy              If --legacy is invoked, the csv reported contain the gene name and the allele id in the row
-                        [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)]. This option is only available when the
-                        --scheme is defined
+  --legacy              If --legacy is invoked, the csv reported contain the gene name and the allele id in the row [adk(1),atpA(4),dxr(7),glyA(1),recA(1),sodA(3),tpi(3)]. This option
+                        is only available when the --scheme is defined
   -n NOVEL, --novel NOVEL
                         File name of the novel alleles
   -V, --version         Show program's version number and exit
+  --db_path DB_PATH     Custom directory for MLST database (default: ~/.cache/fastmlst/pubmlst)
 ```
 # Citation
 
