@@ -14,4 +14,5 @@ jobs:
             python --version
             python -m pip install --upgrade pip setuptools wheel
             python -m pip install .
+            export PATH="$(python -m site --user-base)/bin:$PATH"
             fastmlst -V
