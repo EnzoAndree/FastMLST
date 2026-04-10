@@ -1,0 +1,2 @@
+include fastmlst/bundle/scheme_catalog.json
+include fastmlst/bundle/scheme_catalog_meta.json

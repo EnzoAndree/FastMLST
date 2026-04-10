@@ -1,8 +1,7 @@
 from operator import itemgetter
 import pandas as pd
-from fastmlst.update_mlst_kit import pathdb
 import logging
-from fastmlst.update_mlst_kit import load_obj
+import fastmlst.update_mlst_kit as update_mlst_kit
 from collections import defaultdict
 from sys import exit
 from Bio import SeqIO
@@ -51,9 +50,19 @@ class MLST(object):
         self.coverage = coverage / 100.0
         self.identity = identity / 100.0
         self.sep = sep
-        self.scheme_number = load_obj(str(pathdb) + '/scheme_number.pkl')
+        self.scheme_number = update_mlst_kit.load_obj(str(update_mlst_kit.pathdb) + '/scheme_number.pkl')
         self.beautiname = self.fasta.strip('/').split('/')[-1]
         self.blastn_cli = None
+        self.scheme = None
+        self.score = {'scheme': {}}
+        self.ST = '-'
+        self.name_alleles = []
+        self.number_alleles = 0
+        self.STnumber = '-'
+        self.alleles = {}
+        self.concat_alleles = None
+        self.str_st = ''
+        self.dict_st = {}
         # QCflags
         self.descarted = False
         self.contamination = False
@@ -62,8 +71,6 @@ class MLST(object):
         # QCflags
         self.blast = self.make_blast()
         if self.blastresult:
-            self.scheme = None
-            self.score = None
             self.novel_alleles = []
             self.scoring()
             self.QCflags()
@@ -80,8 +87,6 @@ class MLST(object):
                 self.ST = '-'
             self.name_alleles = self.scheme_number[self.scheme]
             self.number_alleles = len(self.name_alleles)
-            self.STnumber = None
-            self.alleles = None
             self.concat_alleles = self.mlstex()
             if self.descarted:
                 # If any allele has Ns or is broken in 2 contigs, do not determine STs
@@ -96,6 +101,12 @@ class MLST(object):
 
     def __repr__(self,):
         return '{}–ST: {}'.format(self.beautiname, self.STnumber)
+
+    @staticmethod
+    def allele_number_matches(observed, assigned):
+        observed = str(observed)
+        assigned_tokens = [token.strip('~?') for token in str(assigned).split('|')]
+        return observed in assigned_tokens
 
     def QCflags(self, ):
         for locus, value in self.score['scheme'].items():
@@ -120,7 +131,7 @@ class MLST(object):
         # Build the BLAST command without using the deprecated Bio.Blast.Application wrappers
         cmd = [
             "blastn",
-            "-db", str(pathdb) + '/mlst.fasta',
+            "-db", str(update_mlst_kit.pathdb) + '/mlst.fasta',
             "-dust", "no",
             "-outfmt", "6 sseqid slen sstrand sstart send length nident gaps qseqid qstart qend",
             "-max_target_seqs", "130000",
@@ -132,6 +143,12 @@ class MLST(object):
         result = subprocess.run(cmd, input=self.fasta_opened, text=True,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = result.stdout, result.stderr
+        if result.returncode != 0:
+            logger.error(f'BLAST failed ({result.returncode}) for: {self.blastn_cli} < {self.fasta}')
+            if err:
+                logger.error(err.strip())
+            self.blastresult = False
+            return None
         if out == '':
             logger.warning(f'There is no result for: {self.blastn_cli} < {self.fasta}')
             return None
@@ -243,7 +260,7 @@ class MLST(object):
             return True
 
     def STassignment(self, ):
-        scheme_dir = str(pathdb) + '/schemes' + '/' + self.scheme
+        scheme_dir = str(update_mlst_kit.pathdb) + '/schemes' + '/' + self.scheme
         STlist = Path(str(scheme_dir) + '/' + self.scheme + '.txt')
         dfSTlist = pd.read_csv(str(STlist), sep='\t', index_col=0)
         for key, value in self.score['scheme'].items():
@@ -262,8 +279,10 @@ class MLST(object):
         else:
             logger.error('If you got here, congratulations, ' +
                          ' you found a place in maintenance STassignment()!')
-            logger.error(dfSTlist, self.blastn_cli + ' < ' + self.fasta)
+            logger.error(str(dfSTlist))
+            logger.error(self.blastn_cli + ' < ' + self.fasta)
             logger.error(self.score['scheme'])
+            return 'ambiguous_ST'
 
     def mlstex(self, ):
         fasta_output = dict()
@@ -276,8 +295,8 @@ class MLST(object):
                 continue
             if isinstance(pd_blast, pd.DataFrame):
                 for row in pd_blast.iterrows():
-                    if row[1]['number'] not in\
-                            self.score['scheme'][row[1]['gene']] or\
+                    assigned_allele = self.score['scheme'].get(row[1]['gene'], '-')
+                    if not self.allele_number_matches(row[1]['number'], assigned_allele) or\
                             row[1]['coverage'] < self.coverage:
                         continue
                     if row[1]['sstrand'] == 'plus':
