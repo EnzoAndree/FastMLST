@@ -14,5 +14,5 @@ jobs:
             python --version
             python -m pip install --upgrade pip setuptools wheel
             python -m pip install .
-            export PATH="$(python -m site --user-base)/bin:$PATH"
+            export PATH="$(python -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))'):$PATH"
             fastmlst -V
