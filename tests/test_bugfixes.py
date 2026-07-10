@@ -1,3 +1,5 @@
+import json
+import requests
 import shutil
 import tempfile
 import unittest
@@ -16,6 +18,191 @@ from fastmlst import update_mlst_kit
 class DummyLogger:
     def info(self, *_args, **_kwargs):
         return None
+
+
+class OAuthResponse:
+    def __init__(self, status_code, payload=None, text=''):
+        self.status_code = status_code
+        self.payload = payload or {}
+        self.text = text
+        self.headers = {}
+        self.closed = False
+
+    def json(self):
+        return self.payload
+
+    def close(self):
+        self.closed = True
+
+
+class OAuthAccessSession:
+    def __init__(self, response):
+        self.response = response
+
+    def get(self, *_args, **_kwargs):
+        return self.response
+
+
+class OAuthBootstrapClient:
+    responses = {}
+
+    def __init__(self, *_args, access_token=None,
+                 session_token_provider=None, **_kwargs):
+        self.access_token = access_token
+        self.session_token_provider = session_token_provider
+
+    def ensure_authenticated(self):
+        response = self.responses[self.access_token]
+        self.session_token_provider(OAuthAccessSession(response))
+        return self
+
+
+class TestPubMLSTAuthRecovery(unittest.TestCase):
+    def test_token_exchange_retries_tls_errors_without_leaking_signed_url(self):
+        failure = requests.exceptions.SSLError(
+            'failed for https://rest.pubmlst.org/db?oauth_signature=sensitive'
+        )
+        with patch('requests.get', side_effect=failure) as request:
+            with patch.object(update_mlst_kit.time, 'sleep') as sleep:
+                with self.assertRaises(RuntimeError) as caught:
+                    update_mlst_kit._exchange_client_credentials_for_access_tokens(
+                        'client',
+                        'client-secret',
+                        verifier='verifier',
+                        auth_db='pubmlst_demo_seqdef',
+                    )
+
+        message = str(caught.exception)
+        self.assertIn('after 4 attempts (SSLError)', message)
+        self.assertNotIn('oauth_signature', message)
+        self.assertNotIn('sensitive', message)
+        self.assertEqual(request.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+
+    def test_token_exchange_uses_query_signatures_required_by_bigsdb(self):
+        responses = [
+            OAuthResponse(
+                200,
+                {
+                    'oauth_token': 'request-token',
+                    'oauth_token_secret': 'request-secret',
+                },
+            ),
+            OAuthResponse(
+                200,
+                {
+                    'oauth_token': 'access-token',
+                    'oauth_token_secret': 'access-secret',
+                },
+            ),
+        ]
+        with patch('requests.get', side_effect=responses) as request:
+            result = (
+                update_mlst_kit._exchange_client_credentials_for_access_tokens(
+                    'client',
+                    'client-secret',
+                    verifier='verifier',
+                    auth_db='pubmlst_demo_seqdef',
+                )
+            )
+
+        self.assertEqual(result, ('access-token', 'access-secret'))
+        self.assertEqual(request.call_count, 2)
+        for call in request.call_args_list:
+            self.assertEqual(call.kwargs['auth'].client.signature_type, 'QUERY')
+            self.assertFalse(call.kwargs['allow_redirects'])
+
+    def test_cached_access_token_is_bound_to_authorization_database(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            old_config_dir = update_mlst_kit.CONFIG_DIR
+            old_tokens_file = update_mlst_kit.TOKENS_FILE
+            try:
+                update_mlst_kit.CONFIG_DIR = Path(tmpdir)
+                update_mlst_kit.TOKENS_FILE = Path(tmpdir) / 'tokens.json'
+                update_mlst_kit._save_cached_access_token(
+                    'client', 'token', 'secret', 'pubmlst_demo_seqdef'
+                )
+
+                self.assertEqual(
+                    update_mlst_kit._load_cached_access_token(
+                        'client', 'pubmlst_demo_seqdef'
+                    ),
+                    ('token', 'secret'),
+                )
+                self.assertEqual(
+                    update_mlst_kit._load_cached_access_token(
+                        'client', 'pubmlst_other_seqdef'
+                    ),
+                    (None, None),
+                )
+                payload = json.loads(
+                    update_mlst_kit.TOKENS_FILE.read_text(encoding='utf-8')
+                )
+                self.assertEqual(
+                    payload['client']['auth_db'], 'pubmlst_demo_seqdef'
+                )
+            finally:
+                update_mlst_kit.CONFIG_DIR = old_config_dir
+                update_mlst_kit.TOKENS_FILE = old_tokens_file
+
+    def test_cached_token_403_requests_fresh_authorization(self):
+        old_credentials = update_mlst_kit._oauth_credentials
+        update_mlst_kit._oauth_credentials = {
+            'client_id': 'client',
+            'client_secret': 'client-secret',
+            'auth_db': 'pubmlst_demo_seqdef',
+        }
+        OAuthBootstrapClient.responses = {
+            'cached-token': OAuthResponse(403),
+            'fresh-token': OAuthResponse(
+                200,
+                {
+                    'oauth_token': 'session-token',
+                    'oauth_token_secret': 'session-secret',
+                },
+            ),
+        }
+        try:
+            with patch.object(
+                update_mlst_kit,
+                '_load_cached_access_token',
+                return_value=('cached-token', 'cached-secret'),
+            ):
+                with patch.object(
+                    update_mlst_kit,
+                    '_exchange_client_credentials_for_access_tokens',
+                    return_value=('fresh-token', 'fresh-secret'),
+                ) as exchange:
+                    with patch.object(
+                        update_mlst_kit, '_delete_cached_access_token'
+                    ):
+                        with patch.object(
+                            update_mlst_kit, '_save_cached_access_token'
+                        ) as save:
+                            with patch.object(
+                                update_mlst_kit,
+                                'PubMLSTClient',
+                                OAuthBootstrapClient,
+                            ):
+                                client = (
+                                    update_mlst_kit._build_authenticated_session()
+                                )
+
+            self.assertEqual(client.access_token, 'fresh-token')
+            exchange.assert_called_once_with(
+                'client',
+                'client-secret',
+                verifier=None,
+                auth_db='pubmlst_demo_seqdef',
+            )
+            save.assert_called_once_with(
+                'client',
+                'fresh-token',
+                'fresh-secret',
+                'pubmlst_demo_seqdef',
+            )
+        finally:
+            update_mlst_kit._oauth_credentials = old_credentials
 
 
 class TestMlstBugFixes(unittest.TestCase):
@@ -201,7 +388,7 @@ class TestCliSafetyFixes(unittest.TestCase):
                 '{"updated_at": "2026-04-09T16:44:59+00:00", "count": 1}',
                 encoding="utf-8",
             )
-            argv = ["fastmlst", "--scheme-list"]
+            argv = ["fastmlst", "--db_path", str(root), "--scheme-list"]
             with patch("sys.argv", argv):
                 with patch.object(
                     update_mlst_kit,
@@ -216,7 +403,12 @@ class TestCliSafetyFixes(unittest.TestCase):
                         with patch("sys.stdout", StringIO()) as out:
                             with self.assertRaises(SystemExit):
                                 cli.main()
-            self.assertIn("cached", out.getvalue())
+            output = out.getvalue()
+            self.assertIn("cached", output)
+            self.assertIn(
+                f"fastmlst --db_path {root} --scheme-list-update",
+                output,
+            )
         finally:
             update_mlst_kit.pathdb = old_pathdb
             update_mlst_kit._oauth_credentials = old_credentials
@@ -384,7 +576,14 @@ class TestParseUpdateMlstSelectors(unittest.TestCase):
 
 class TestLoadOrBuildSchemeCatalog(unittest.TestCase):
     def test_load_or_build_uses_cache_without_fetch(self):
-        sentinel = [{'codename': 'cached'}]
+        sentinel = [{
+            'codename': 'cached',
+            'database': 'pubmlst_cached_seqdef',
+            'scheme_id': 1,
+            'description': 'MLST',
+            'profiles_csv': 'https://example.test/profiles',
+            'loci': ['https://example.test/loci/adk'],
+        }]
         with patch.object(update_mlst_kit, 'load_scheme_catalog', return_value=sentinel):
             with patch.object(
                 update_mlst_kit,
@@ -525,6 +724,10 @@ class TestOAuthConfigFixes(unittest.TestCase):
                 update_mlst_kit.set_oauth_credentials(client_id="abc")
             with self.assertRaises(ValueError):
                 update_mlst_kit.set_oauth_credentials(client_id="a", client_secret="b", access_token="tok")
+            with self.assertRaises(ValueError):
+                update_mlst_kit.set_oauth_credentials(
+                    client_id="a", client_secret="b", auth_db="../other"
+                )
         finally:
             update_mlst_kit.CONFIG_DIR = old_dir
             update_mlst_kit.CONFIG_FILE = old_file

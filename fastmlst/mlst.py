@@ -40,6 +40,11 @@ excluded_by_default = ['abaumannii#2', 'ecoli#2', 'leptospira#2', 'leptospira#3'
 class MLST(object):
     def __init__(self, fasta, coverage=75, identity=95, sep=',',
             longheader=False, target_scheme=None):
+        with update_mlst_kit.database_read_lock():
+            self._initialize(fasta, coverage, identity, sep, longheader, target_scheme)
+
+    def _initialize(self, fasta, coverage=75, identity=95, sep=',',
+            longheader=False, target_scheme=None):
         super(MLST, self).__init__()
         self.target_scheme = target_scheme
         self.longheader = longheader
@@ -135,9 +140,13 @@ class MLST(object):
             "-dust", "no",
             "-outfmt", "6 sseqid slen sstrand sstart send length nident gaps qseqid qstart qend",
             "-max_target_seqs", "130000",
-            "-evalue", "1E-20",
-            "-ungapped"
         ]
+        if getattr(self, 'target_scheme', None) == 'ngstar_v2':
+            # NG-STAR v2 defines porB with 30 bp marker sequences. The regular
+            # FastMLST E-value threshold rejects even perfect hits this short.
+            cmd.extend(["-task", "blastn-short", "-evalue", "1000"])
+        else:
+            cmd.extend(["-evalue", "1E-20", "-ungapped"])
         self.blastn_cli = " ".join(cmd)
         logger.debug(self.blastn_cli + ' < ' + self.fasta)
         result = subprocess.run(cmd, input=self.fasta_opened, text=True,

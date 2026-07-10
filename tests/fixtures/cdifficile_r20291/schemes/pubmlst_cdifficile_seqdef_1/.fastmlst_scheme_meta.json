@@ -1,0 +1,22 @@
+{
+  "database": "pubmlst_cdifficile_seqdef",
+  "scheme_id": 1,
+  "description": "MLST",
+  "remote_snapshot": {
+    "scheme_id": 1,
+    "last_updated": "2026-07-10",
+    "last_added": "2026-07-10",
+    "records": 1314,
+    "locus_count": 7
+  },
+  "loci": [
+    "adk",
+    "atpA",
+    "dxr",
+    "glyA",
+    "recA",
+    "sodA",
+    "tpi"
+  ],
+  "saved_at": "2026-07-10T15:50:03+00:00"
+}

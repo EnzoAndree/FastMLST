@@ -20,19 +20,37 @@ import fastmlst.update_mlst_kit as u  # noqa: E402
 def main() -> None:
     bundle = Path(u.__file__).resolve().parent / 'bundle'
     bundle.mkdir(parents=True, exist_ok=True)
-    session = u._build_authenticated_session()
-    if session:
-        print('Using saved PubMLST OAuth session for catalog fetch.', flush=True)
-    else:
-        print('Using anonymous API access (may fail with HTTP 401 on some databases).', flush=True)
-    print('Fetching catalog from https://rest.pubmlst.org (this may take several minutes)...', flush=True)
-    catalog = u.fetch_public_scheme_catalog(session=session)
-    prev = u.pathdb
+
     try:
-        u.pathdb = bundle
-        u.save_scheme_catalog(catalog)
+        u.configure_pubmlst_auth_from_environment(require_auth=True)
+    except (RuntimeError, ValueError) as exc:
+        raise SystemExit(
+            f'Cannot refresh the bundled catalog without PubMLST authentication: {exc}'
+        ) from exc
+
+    try:
+        session = u._build_authenticated_session()
+    except (RuntimeError, ValueError, OSError) as exc:
+        raise SystemExit(f'Could not create an authenticated PubMLST session: {exc}') from exc
+    if session is None:
+        raise SystemExit(
+            'Cannot refresh the bundled catalog without an authenticated PubMLST session.'
+        )
+
+    print('Using PubMLST OAuth session for catalog fetch.', flush=True)
+    print('Fetching catalog from https://rest.pubmlst.org (this may take several minutes)...', flush=True)
+    try:
+        catalog = u.fetch_public_scheme_catalog(session=session)
+        prev = u.pathdb
+        try:
+            u.pathdb = bundle
+            u.save_scheme_catalog(catalog)
+        finally:
+            u.pathdb = prev
     finally:
-        u.pathdb = prev
+        close = getattr(session, 'close', None)
+        if callable(close):
+            close()
     print(f'Wrote {len(catalog)} schemes to {bundle}', flush=True)
 
 

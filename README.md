@@ -19,7 +19,7 @@ FastMLST no longer relies on legacy static PubMLST bundle files. It uses the off
 ### What lives in your cache
 
 - By default, databases and downloads go to **`~/.cache/fastmlst/pubmlst`** (or **`--db_path`**).
-- On a full **`--update-mlst ALL`**, the local **`scheme_catalog.json`** (and meta file) are **preserved** when the rest of the tree is reset, so listing and updates do not unnecessarily re-crawl the full API catalog every time.
+- Updates are transactional: FastMLST builds and validates a sibling staging database, including the BLAST indexes, before replacing the active cache. Authentication, network, validation, or `makeblastdb` failures leave the installed database unchanged.
 - Each scheme is stored under a **stable folder name**: **`{database}_{scheme_id}`**, e.g. `pubmlst_cdifficile_seqdef_1`. Use that name with **`--scheme`**.
 
 ### When network / API access is required
@@ -28,18 +28,18 @@ FastMLST no longer relies on legacy static PubMLST bundle files. It uses the off
 |--------|-----------------|
 | **`--scheme-list`** | Only if there is **no** usable catalog in cache **and** none in the installed package bundle (first run or minimal install). |
 | **`--scheme-list-update`** | **Yes** — always refreshes from the API. |
-| **`--update-mlst VALUE`** | **Yes** — pass **`ALL`** (downloads every scheme in the catalog; very slow) or explicit comma-separated selectors (`database:scheme_id` / stable codenames). |
+| **`--update-mlst VALUE`** | **Yes** — pass **`ALL`** for standard-sized schemes or explicit comma-separated selectors (`database:scheme_id` / stable codenames). |
 | Typing genomes (after DB is built) | **No** — uses local BLAST DB and scheme files. |
 
-### Anonymous access vs OAuth
+### Authenticated access
 
-FastMLST can query the PubMLST API without logging in, but that **anonymous mode should not be used for normal operation**. It is incomplete and may return outdated or missing data. PubMLST may limit or deny some resources to unauthenticated requests, so profile tables or allele FASTA downloads for some databases can fail or come back incomplete.
+FastMLST requires PubMLST authentication for every live catalog refresh and scheme download. Anonymous responses are not accepted because they may omit profile tables or allele FASTA links. A bundled or cached catalog can still be displayed offline with `--scheme-list`.
 
 In practice:
 
-- Use **OAuth** for **`--scheme-list-update`** and **`--update-mlst`**.
-- If you need current PubMLST data, including **post-2024 allele data**, **OAuth is required**.
-- The bundled or cached scheme catalog can still be viewed locally without network access, but any live refresh or download should be done with OAuth.
+- **OAuth is required** for **`--scheme-list-update`** and **`--update-mlst`**.
+- OAuth requests use BIGSdb's required signed query parameters over HTTPS. FastMLST restricts signed requests to `rest.pubmlst.org`, disables redirects, renews session tokens automatically, and uses bounded retries for rate limits or temporary server failures.
+- Client credentials and access tokens are stored with user-only filesystem permissions. Credentials supplied only through environment variables are not copied to disk.
 
 OAuth setup is a **one-time step**:
 
@@ -51,7 +51,12 @@ fastmlst --pubmlst-connect \
 
 You can also provide the same values through **`FASTMLST_PUBMLST_CLIENT_ID`** and **`FASTMLST_PUBMLST_CLIENT_SECRET`**.
 
-FastMLST will open the PubMLST authorization flow in your browser. After you approve access, the returned tokens are stored locally and reused in later runs, so you do not need to repeat the login every time. See **`fastmlst --help`** for the full set of OAuth-related flags.
+FastMLST prints the PubMLST authorization URL. Open it in your browser, approve access, and paste the verifier code. The returned tokens are stored locally and reused. If PubMLST revokes a token, run `fastmlst --pubmlst-reset-auth` and repeat `--pubmlst-connect`. Accounts that are not registered for the default Neisseria authorization database can select another one with `--pubmlst-auth-db DATABASE`.
+
+For a centrally managed read-only database, keep the sibling coordination file
+`.DATABASE_NAME.fastmlst-update.lock` readable by every FastMLST user. New
+updates create it with read permissions automatically. An administrator must
+create it once for a legacy shared database before read-only users run FastMLST.
 
 For a step-by-step walkthrough with screenshots, see [PubMLST-API-setup-tutorial-for-FastMLST](https://github.com/EnzoAndree/FastMLST/wiki/PubMLST-API-setup-tutorial-for-FastMLST).
 
@@ -151,13 +156,15 @@ $ fastmlst --legacy --scheme pubmlst_cdifficile_seqdef_1 cdiff_refferences/RT078
 RT078_CDM120.fasta,cdifficile,11,adk(5),atpA(8),dxr(5),glyA(11),recA(9),sodA(11),tpi(8),mlst_clade(5.0)
 ```
 
-PubMLST schemes are listed with **`--scheme-list`** (uses your local `scheme_catalog.json` cache, the catalog shipped with the package, or a one-time API fetch if nothing is available yet). Each line includes the stable codename, `database:scheme_id`, species, and description. To **rebuild the catalog from the live API**, use **`--scheme-list-update`** (OAuth recommended; see `--pubmlst-connect`).
+PubMLST schemes are listed with **`--scheme-list`** (uses your local `scheme_catalog.json` cache, the catalog shipped with the package, or an authenticated API fetch if nothing is available yet). Each line includes the stable codename, `database:scheme_id`, species, and description. To **rebuild the catalog from the live API**, use **`--scheme-list-update`** after `--pubmlst-connect`.
 
 **Hint: use the scheme folder name (`codename`, e.g. `pubmlst_cdifficile_seqdef_1`) with `--scheme`.**
 
 ```
 $ fastmlst --scheme-list
 Total remote schemes: 235 (bundled with package, snapshot 2026-04-09T16:44:59+00:00)
+Refresh the available-scheme catalog from PubMLST (OAuth required):
+  fastmlst --scheme-list-update
 
 (1) pubmlst_achromobacter_seqdef_1 | pubmlst_achromobacter_seqdef:1 | achromobacter | MLST
 (2) pubmlst_abaumannii_seqdef_1 | pubmlst_abaumannii_seqdef:1 | abaumannii | MLST (Oxford)
@@ -269,7 +276,7 @@ FastMLST uses a scoring system to determine the scheme to be employed similar to
 * +20/N points for a partial allele match _e.g._ `1?`
 * 0 points for a missing allele _e.g._ `-`
 # Updating the Schemes
-You should **always, always, always keep the PubMLST database updated**. **`--update-mlst` requires a value** and uses the live REST API to download profiles and allele FASTA (OAuth recommended).
+You should **always, always, always keep the PubMLST database updated**. **`--update-mlst` requires a value** and uses the live REST API to download and validate profiles and allele FASTA. OAuth setup is required first.
 
 **Typical — only the schemes you need:**
 
@@ -281,17 +288,23 @@ $ fastmlst --update-mlst "pubmlst_cdifficile_seqdef_1"
 
 Discover IDs with **`fastmlst --scheme-list`**.
 
-**Full install — every scheme in the catalog (slow, explicit):**
+**Standard full install — excludes cgMLST/wgMLST and schemes over 100 loci:**
 
 ```
 $ fastmlst --update-mlst ALL
+```
+
+To include the very large schemes as well, opt in explicitly. This can require substantial time and disk space:
+
+```
+$ fastmlst --update-mlst ALL --include-large-schemes
 ```
 
 Plain **`fastmlst --update-mlst`** (without a value) is **rejected** by the CLI.
 
 If BLAST database files are missing and you run typing without updating first, FastMLST exits with an error pointing you to **`--update-mlst …`**.
 
-The scheme catalog is taken from **local cache** or the **bundled snapshot** when available, so listing and incremental work do not unnecessarily re-crawl the full API catalog every time.
+`--scheme-list` uses the local cache or bundled snapshot. A transactional `--update-mlst ALL` refreshes the complete live catalog first so a stale or partial snapshot cannot silently remove or omit schemes. Explicit selectors are resolved directly without crawling the whole catalog.
 
 Refresh only the **scheme list** from the API (then print it):
 
@@ -299,12 +312,57 @@ Refresh only the **scheme list** from the API (then print it):
 $ fastmlst --scheme-list-update
 ```
 
+## NG-STAR v2
+
+FastMLST can build and use an independent [NG-STAR v2](https://ngstar.canada.ca/)
+database for *Neisseria gonorrhoeae* antimicrobial-resistance typing. It is
+stored separately from PubMLST under `~/.cache/fastmlst/NG-STAR-v2` and does
+not use PubMLST OAuth credentials.
+
+NG-STAR was described by Demczuk et al. in the
+[original seven-locus scheme publication](https://doi.org/10.1128/JCM.00100-17).
+
+The downloader retrieves the seven official loci (`penA`, `mtrR`, `porB`,
+`ponA`, `gyrA`, `parC`, and `23S`) and converts the official XLSX profile table
+to FastMLST's tab-delimited format. Allele identifiers are resolved against the
+FASTA headers so identifiers such as `22.001`, `10.0`, and the v2 replacement
+allele `100` retain their exact NG-STAR representation.
+
+Download or refresh NG-STAR v2:
+
+```bash
+fastmlst --update-ngstar-v2
+```
+
+Type one or more genomes:
+
+```bash
+fastmlst --ngstar-v2 genome.fasta
+fastmlst --ngstar-v2 genomes/*.fasta.gz
+```
+
+Use an alternate NG-STAR directory without mixing it with PubMLST:
+
+```bash
+fastmlst --update-ngstar-v2 \
+  --ngstar-db-path /Users/enzo/.cache/fastmlst-test/NG-STAR-v2
+
+fastmlst --ngstar-v2 \
+  --ngstar-db-path /Users/enzo/.cache/fastmlst-test/NG-STAR-v2 \
+  genome.fasta
+```
+
+Updates are transactional: allele, profile, conversion, or BLAST failures leave
+the previously installed NG-STAR v2 database unchanged. The original downloaded
+XLSX and a SHA-256 metadata manifest are retained inside the database.
+
 # Complete usage Options
 ```
 usage: fastmlst.py [-h] [-t THREADS] [-v {0,1,2}] [-s SEPARATOR] [-sch SCHEME] [--scheme-list] [--scheme-list-update] [--installed-scheme-stats] [-fo FASTAOUTPUT]
-                   [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst [UPDATE_MLST]] [--redownload-all-schemes] [-sp SPLITED_OUTPUT]
+                   [-to TABLEOUTPUT] [-cov COVERAGE] [-pid IDENTITY] [--update-mlst [UPDATE_MLST]] [--redownload-all-schemes] [--include-large-schemes]
+                   [--update-ngstar-v2] [--ngstar-v2] [--ngstar-db-path NGSTAR_DB_PATH] [-sp SPLITED_OUTPUT]
                    [--fasta2line] [--longheader] [--legacy] [-n NOVEL] [-V] [--db_path DB_PATH] [--pubmlst-client-id PUBMLST_CLIENT_ID]
-                   [--pubmlst-client-secret PUBMLST_CLIENT_SECRET] [--pubmlst-connect]
+                   [--pubmlst-client-secret PUBMLST_CLIENT_SECRET] [--pubmlst-connect] [--pubmlst-auth-db PUBMLST_AUTH_DB] [--pubmlst-reset-auth]
                    [genomes ...]
 
 ⚡️🧬 FastMLST: A multi-core tool for multilocus sequence typing of draft genome assemblies
@@ -338,6 +396,12 @@ options:
                         Update PubMLST from the API. Pass ALL for the full catalog (very slow), or a comma-separated list of database:scheme_id / stable codenames.
   --redownload-all-schemes
                         Ignore local version metadata and re-download every scheme (default: skip schemes that match remote API metadata)
+  --include-large-schemes
+                        With --update-mlst ALL, also download cgMLST/wgMLST and schemes with more than 100 loci
+  --update-ngstar-v2    Download and build the independent NG-STAR v2 database
+  --ngstar-v2           Type genomes with the independent NG-STAR v2 database
+  --ngstar-db-path NGSTAR_DB_PATH
+                        NG-STAR v2 database directory (default: ~/.cache/fastmlst/NG-STAR-v2)
   -sp, --splited-output SPLITED_OUTPUT
                         Directory output for splited alleles (default "")
   --fasta2line          The fasta files will be in fasta2line format
@@ -352,6 +416,9 @@ options:
   --pubmlst-client-secret PUBMLST_CLIENT_SECRET
                         PubMLST OAuth client secret (or FASTMLST_PUBMLST_CLIENT_SECRET)
   --pubmlst-connect     Run one-time PubMLST OAuth setup and save credentials/tokens
+  --pubmlst-auth-db PUBMLST_AUTH_DB
+                        PubMLST database used for OAuth authorization (or FASTMLST_PUBMLST_AUTH_DB)
+  --pubmlst-reset-auth  Remove cached PubMLST access tokens, keeping the saved client credentials
 ```
 
 # Citation

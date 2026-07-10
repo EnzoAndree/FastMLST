@@ -1,0 +1,4 @@
+tests/fixtures/cdifficile_r20291/*.fasta.gz -diff
+tests/fixtures/cdifficile_r20291/schemes/**/*.tfa -diff
+tests/fixtures/ngstar_v2_source/**/*.gz -diff
+tests/fixtures/ngstar_v2_source/*.xlsx -diff

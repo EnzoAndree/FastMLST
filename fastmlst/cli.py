@@ -4,6 +4,7 @@ import argparse
 import logging
 import multiprocessing
 import os
+import shlex
 from codecs import decode
 from collections import defaultdict
 from itertools import repeat
@@ -21,7 +22,7 @@ from tqdm import tqdm  # pip3 install tqdm
 
 from fastmlst import __version__
 from fastmlst.mlst import MLST
-from fastmlst.update_mlst_kit import necessary_file
+import fastmlst.ngstar as ngstar_kit
 import fastmlst.update_mlst_kit as update_mlst_kit
 
 
@@ -58,7 +59,7 @@ def safe_reset_database(db_path, logger):
     from shutil import copy2, rmtree
     import tempfile
 
-    db_path = Path(db_path).resolve()
+    db_path = update_mlst_kit._validate_database_destination(db_path)
     if not db_path.exists():
         return
     if not db_path.is_dir():
@@ -113,8 +114,11 @@ def safe_reset_database(db_path, logger):
 
 
 def runMLST(margument):
-    genome, cov, ident, sep, header, shcheme = margument
-    return MLST(genome, cov, ident, sep, header, shcheme)
+    genome, cov, ident, sep, header, scheme, database_path = margument
+    # macOS and Windows workers use spawn, so module globals are initialized
+    # again in the child process. Pass the selected database explicitly.
+    update_mlst_kit.set_pathdb(database_path)
+    return MLST(genome, cov, ident, sep, header, scheme)
 
 
 def resolve_update_selectors_arg(update_mlst_arg, legacy_select_schemes_arg=''):
@@ -147,7 +151,7 @@ def main():
     parser.add_argument('--list-remote-schemes', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--list-remote-schemes-update', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--installed-scheme-stats', action='store_true',
-                        help='List each installed scheme on one line: PubMLST description, type, ST count, alleles, per-locus counts')
+                        help='List each installed scheme on one line: description, type, ST count, alleles, per-locus counts')
     parser.add_argument('-fo', '--fastaoutput', type=str, default='',
                         help='File name of the concatenated alleles output' +
                         ' (default "")')
@@ -169,6 +173,14 @@ def main():
                         help=argparse.SUPPRESS)
     parser.add_argument('--redownload-all-schemes', action='store_true',
                         help='Ignore local version metadata and re-download every scheme (default: skip schemes that match remote API metadata)')
+    parser.add_argument('--include-large-schemes', action='store_true',
+                        help='With --update-mlst ALL, also download cgMLST/wgMLST and schemes with more than 100 loci')
+    parser.add_argument('--update-ngstar-v2', action='store_true',
+                        help='Download and build the independent NG-STAR v2 database')
+    parser.add_argument('--ngstar-v2', action='store_true',
+                        help='Type genomes with the independent NG-STAR v2 database')
+    parser.add_argument('--ngstar-db-path', type=str, default=None,
+                        help='NG-STAR v2 database directory (default: ~/.cache/fastmlst/NG-STAR-v2)')
     parser.add_argument('-sp', '--splited-output', type=str, default='',
                         help='Directory output for splited alleles' +
                         ' (default "")')
@@ -197,21 +209,89 @@ def main():
                         help='PubMLST OAuth client secret (or FASTMLST_PUBMLST_CLIENT_SECRET)')
     parser.add_argument('--pubmlst-connect', action='store_true',
                         help='Run one-time PubMLST OAuth setup and save credentials/tokens')
+    parser.add_argument('--pubmlst-auth-db', type=str, default=None,
+                        help='PubMLST database used for OAuth authorization (or FASTMLST_PUBMLST_AUTH_DB)')
+    parser.add_argument('--pubmlst-reset-auth', action='store_true',
+                        help='Remove cached PubMLST access tokens, keeping the saved client credentials')
     args = parser.parse_args()
 
-    if args.db_path:
+    ngstar_mode = args.ngstar_v2 or args.update_ngstar_v2
+    if args.ngstar_db_path and not ngstar_mode:
+        parser.error('--ngstar-db-path requires --ngstar-v2 or --update-ngstar-v2.')
+    if ngstar_mode and args.db_path:
+        parser.error('--db_path is for PubMLST; use --ngstar-db-path for NG-STAR v2.')
+    if ngstar_mode and args.update_mlst is not None:
+        parser.error('--update-mlst cannot be combined with NG-STAR v2 options.')
+    if args.update_ngstar_v2 and args.ngstar_v2:
+        parser.error('Run --update-ngstar-v2 and --ngstar-v2 as separate commands.')
+    if args.update_ngstar_v2 and args.installed_scheme_stats:
+        parser.error(
+            'Run --update-ngstar-v2 and --installed-scheme-stats as separate commands.'
+        )
+    if ngstar_mode and (
+        args.scheme_list
+        or args.scheme_list_update
+        or args.list_remote_schemes
+        or args.list_remote_schemes_update
+        or args.pubmlst_connect
+        or args.pubmlst_reset_auth
+        or args.pubmlst_client_id
+        or args.pubmlst_client_secret
+        or args.pubmlst_auth_db
+    ):
+        parser.error('PubMLST catalog/authentication options cannot be combined with NG-STAR v2.')
+    if args.update_ngstar_v2 and args.genomes:
+        parser.error('--update-ngstar-v2 cannot be combined with genome inputs.')
+    if args.ngstar_v2:
+        if args.scheme and args.scheme.lower() != ngstar_kit.NGSTAR_SCHEME:
+            parser.error('--ngstar-v2 cannot be combined with a different --scheme.')
+
+    if ngstar_mode:
+        update_mlst_kit.set_pathdb(
+            args.ngstar_db_path or ngstar_kit.default_ngstar_database_path()
+        )
+    elif args.db_path:
         update_mlst_kit.set_pathdb(args.db_path)
+    try:
+        update_mlst_kit.recover_database_if_needed()
+    except (RuntimeError, OSError) as exc:
+        parser.exit(1, f'ERROR: Could not recover the FastMLST database: {exc}\n')
+
+    if args.pubmlst_reset_auth:
+        update_mlst_kit.clear_pubmlst_auth(remove_credentials=False)
+        print('Cached PubMLST access tokens were removed.')
+        exit()
 
     client_id = args.pubmlst_client_id or os.environ.get('FASTMLST_PUBMLST_CLIENT_ID')
     client_secret = args.pubmlst_client_secret or os.environ.get('FASTMLST_PUBMLST_CLIENT_SECRET')
     access_token = os.environ.get('FASTMLST_PUBMLST_ACCESS_TOKEN')
     access_secret = os.environ.get('FASTMLST_PUBMLST_ACCESS_SECRET')
     verifier = os.environ.get('FASTMLST_PUBMLST_VERIFIER')
-    update_mlst_kit.set_oauth_credentials(client_id, client_secret, access_token, access_secret, verifier)
-    if client_id and client_secret:
-        update_mlst_kit.save_pubmlst_client_credentials(client_id, client_secret)
+    if not ngstar_mode:
+        try:
+            update_mlst_kit.configure_pubmlst_auth_from_environment(
+                client_id=client_id,
+                client_secret=client_secret,
+                access_token=access_token,
+                access_secret=access_secret,
+                verifier=verifier,
+                auth_db=args.pubmlst_auth_db,
+            )
+        except ValueError as exc:
+            parser.error(str(exc))
     if args.pubmlst_connect:
-        update_mlst_kit.connect_pubmlst(client_id=client_id, client_secret=client_secret, verifier=verifier)
+        try:
+            oauth_client = update_mlst_kit.connect_pubmlst(
+                client_id=client_id,
+                client_secret=client_secret,
+                verifier=verifier,
+                auth_db=args.pubmlst_auth_db,
+            )
+        except (RuntimeError, ValueError, OSError) as exc:
+            parser.exit(1, f'ERROR: PubMLST OAuth setup failed: {exc}\n')
+        close = getattr(oauth_client, 'close', None)
+        if callable(close):
+            close()
         logger = logging.getLogger('FastMLST')
         logger.info('PubMLST OAuth credentials/tokens are configured.')
         exit()
@@ -228,12 +308,22 @@ def main():
     ):
         has_cached_catalog = update_mlst_kit.load_scheme_catalog() is not None
         session = None
-        if scheme_list_refresh or not has_cached_catalog:
-            session = update_mlst_kit._build_authenticated_session()
-        catalog, from_cache, used_live_api = update_mlst_kit.get_remote_scheme_catalog(
-            session=session,
-            force_refresh=scheme_list_refresh,
-        )
+        catalog_read_handle = None
+        if has_cached_catalog and not scheme_list_refresh:
+            try:
+                catalog_read_handle = update_mlst_kit.acquire_database_read_lock()
+            except RuntimeError as exc:
+                parser.exit(1, f'ERROR: {exc}\n')
+        try:
+            if scheme_list_refresh or not has_cached_catalog:
+                update_mlst_kit.configure_pubmlst_auth_from_environment(require_auth=True)
+                session = update_mlst_kit._build_authenticated_session()
+            catalog, from_cache, used_live_api = update_mlst_kit.get_remote_scheme_catalog(
+                session=session,
+                force_refresh=scheme_list_refresh,
+            )
+        except (RuntimeError, ValueError, OSError) as exc:
+            parser.exit(1, f'ERROR: PubMLST catalog request failed: {exc}\n')
         if scheme_list_refresh:
             if not used_live_api:
                 print(
@@ -241,22 +331,32 @@ def main():
                     '(using existing catalog data only).',
                     file=stderr,
                 )
-            elif session is None:
-                print(
-                    'WARNING: No PubMLST OAuth session; refresh uses anonymous API access. '
-                    'Some databases may return HTTP 401 — run --pubmlst-connect for full access.',
-                    file=stderr,
-                )
         meta = update_mlst_kit.load_scheme_catalog_meta()
+        refresh_parts = ['fastmlst']
+        if args.db_path:
+            refresh_parts.extend([
+                '--db_path', str(Path(args.db_path).expanduser())
+            ])
+        refresh_parts.append('--scheme-list-update')
+        refresh_command = ' '.join(shlex.quote(part) for part in refresh_parts)
         update_mlst_kit.print_remote_scheme_catalog(
             catalog,
             from_cache=from_cache,
             meta=meta,
+            refresh_command=refresh_command,
         )
+        close = getattr(session, 'close', None)
+        if callable(close):
+            close()
+        update_mlst_kit.release_database_read_lock(catalog_read_handle)
         exit()
 
     if args.installed_scheme_stats:
-        update_mlst_kit.print_installed_scheme_stats()
+        try:
+            with update_mlst_kit.database_read_lock():
+                update_mlst_kit.print_installed_scheme_stats()
+        except RuntimeError as exc:
+            parser.exit(1, f'ERROR: {exc}\n')
         exit()
 
     split_namefromcode = compile(r'(?P<gene>.+)\((?P<novel>~?)(?P<number>\d+)(?P<partial>\??)\)')
@@ -276,19 +376,54 @@ def main():
                             format='[%(asctime)s] %(levelname)s@%(name)s: %(message)s',
                             datefmt='%H:%M:%S')
         logger = logging.getLogger('FastMLST')
-    update_mlst_kit.pathdb.mkdir(exist_ok=True, parents=True)
-    is_all_files = all((update_mlst_kit.pathdb / f).is_file() for f in necessary_file)
-    if not is_all_files and args.update_mlst is None:
-        print(
-            'ERROR: PubMLST database files are missing under {}.\n'
-            'Run: fastmlst --update-mlst ALL\n'
-            '  (full catalog, very slow) or e.g.\n'
-            '  fastmlst --update-mlst "pubmlst_cdifficile_seqdef:1"'.format(
-                update_mlst_kit.pathdb
-            ),
-            file=stderr,
-        )
+    database_read_handle = None
+    if args.update_mlst is None and not args.update_ngstar_v2:
+        try:
+            database_read_handle = update_mlst_kit.acquire_database_read_lock()
+        except RuntimeError as exc:
+            parser.exit(1, f'ERROR: {exc}\n')
+    is_all_files = update_mlst_kit.blast_database_is_ready()
+    if (
+        not is_all_files
+        and args.update_mlst is None
+        and not args.update_ngstar_v2
+    ):
+        if args.ngstar_v2:
+            print(
+                'ERROR: NG-STAR v2 database files are missing under {}.\n'
+                'Run: fastmlst --update-ngstar-v2{}'.format(
+                    update_mlst_kit.pathdb,
+                    (
+                        f' --ngstar-db-path {args.ngstar_db_path}'
+                        if args.ngstar_db_path else ''
+                    ),
+                ),
+                file=stderr,
+            )
+        else:
+            print(
+                'ERROR: PubMLST database files are missing under {}.\n'
+                'Run: fastmlst --update-mlst ALL\n'
+                '  (full catalog, very slow) or e.g.\n'
+                '  fastmlst --update-mlst "pubmlst_cdifficile_seqdef:1"'.format(
+                    update_mlst_kit.pathdb
+                ),
+                file=stderr,
+            )
         exit(2)
+
+    if args.update_ngstar_v2:
+        try:
+            metadata = ngstar_kit.update_ngstar_v2_database(
+                update_mlst_kit.pathdb
+            )
+        except (RuntimeError, ValueError, OSError) as exc:
+            parser.exit(1, f'ERROR: NG-STAR v2 update failed: {exc}\n')
+        print(
+            f"NG-STAR v2 database updated under {update_mlst_kit.pathdb} "
+            f"({metadata['profile_count']} profiles)."
+        )
+        exit()
 
     if args.update_mlst is not None:
         from fastmlst.update_mlst_kit import parse_update_mlst_selectors
@@ -297,35 +432,40 @@ def main():
             mlst_download_selectors = parse_update_mlst_selectors(selectors)
         except ValueError as exc:
             parser.error(str(exc))
-        if mlst_download_selectors is None:
-            safe_reset_database(update_mlst_kit.pathdb, logger)
-        update_mlstdb_selected(
-            args.threads,
-            selectors=mlst_download_selectors,
-            force_redownload_schemes=args.redownload_all_schemes,
-        )
+        try:
+            update_mlstdb_selected(
+                args.threads,
+                selectors=mlst_download_selectors,
+                force_redownload_schemes=args.redownload_all_schemes,
+                include_large_schemes=args.include_large_schemes,
+            )
+        except (RuntimeError, ValueError, OSError) as exc:
+            parser.exit(1, f'ERROR: PubMLST update failed: {exc}\n')
         exit()
     if not args.genomes:
         parser.print_help(stderr)
         exit()
-    if args.scheme is not None:
-        args.scheme = args.scheme.lower()
+    target_scheme = args.scheme.lower() if args.scheme is not None else None
+    if args.ngstar_v2:
+        target_scheme = ngstar_kit.NGSTAR_SCHEME
+    if target_scheme is not None:
         scheme_dir = update_mlst_kit.pathdb / 'schemes'
-        if args.scheme in [d.name for d in scheme_dir.iterdir()]:
+        if target_scheme in [d.name for d in scheme_dir.iterdir()]:
             logger.info('Ok my little buddy, i trust your judgment. I will ' +
-                        f'proceed with the search using only the following scheme: {args.scheme}')
+                        f'proceed with the search using only the following scheme: {target_scheme}')
         else:
-            logger.error(f'Are you sure that "{args.scheme}" is a supported scheme?')
+            logger.error(f'Are you sure that "{target_scheme}" is a supported scheme?')
             logger.error('Don\'t worry my little buddy. You are a human ' +
                          'after all. I\'ll keep trying to choose the best scheme.')
-            args.scheme = None
+            target_scheme = None
     genome_mlst = []
     multipleargs = list(zip(args.genomes,
                             repeat(args.coverage),
                             repeat(args.identity),
                             repeat(args.separator),
                             repeat(args.longheader),
-                            repeat(args.scheme),
+                            repeat(target_scheme),
+                            repeat(str(update_mlst_kit.pathdb)),
                             ))
     with Pool(args.threads) as p:
         for result in tqdm(p.imap(runMLST, multipleargs),
@@ -408,6 +548,7 @@ def main():
                 args.tableoutput.write(df.to_csv(index=False, sep=args.separator))
         else:
             print(str_alleles[:-1], file=args.tableoutput)
+    update_mlst_kit.release_database_read_lock(database_read_handle)
 
 
 if __name__ == '__main__':

@@ -1,18 +1,50 @@
 version: 2.1
 
-orbs:
-  python: circleci/python@0.2.1
-
 jobs:
   build:
+    parameters:
+      python-version:
+        type: string
+        default: "3.11"
     docker:
-      - image: cimg/python:3.8.5
+      - image: cimg/python:<< parameters.python-version >>
     steps:
       - checkout
       - run:
+          name: Install NCBI BLAST+
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y ncbi-blast+
+      - run:
+          name: Install test and build dependencies
           command: |
             python --version
-            python -m pip install --upgrade pip setuptools wheel
+            python -m pip install --upgrade pip setuptools wheel build pytest
             python -m pip install .
-            export PATH="$(python -c 'import sysconfig; print(sysconfig.get_path("scripts"))'):$PATH"
-            fastmlst -V
+      - run:
+          name: Compile Python sources
+          command: python -m compileall -q fastmlst scripts
+      - run:
+          name: Run tests
+          command: python -m pytest -q
+      - run:
+          name: Build wheel
+          command: |
+            PROJECT_DIR="$PWD"
+            cd /tmp
+            python -m build --wheel --outdir "$PROJECT_DIR/dist" "$PROJECT_DIR"
+            python -m venv --system-site-packages /tmp/fastmlst-wheel-smoke
+            /tmp/fastmlst-wheel-smoke/bin/python -m pip install --force-reinstall --no-deps "$PROJECT_DIR"/dist/*.whl
+      - run:
+          name: Smoke-test installed wheel
+          command: |
+            cd /tmp
+            /tmp/fastmlst-wheel-smoke/bin/fastmlst -V
+
+workflows:
+  test-and-build:
+    jobs:
+      - build:
+          matrix:
+            parameters:
+              python-version: ["3.8", "3.11"]
