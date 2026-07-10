@@ -262,16 +262,16 @@ class MLST(object):
     def STassignment(self, ):
         scheme_dir = str(update_mlst_kit.pathdb) + '/schemes' + '/' + self.scheme
         STlist = Path(str(scheme_dir) + '/' + self.scheme + '.txt')
-        dfSTlist = pd.read_csv(str(STlist), sep='\t', index_col=0)
+        dfSTlist = pd.read_csv(str(STlist), sep='\t', index_col=0, dtype=str)
         for key, value in self.score['scheme'].items():
             if '|' in value:
-                value = list(set(value.split('|')))
+                value = list(set(token.strip('~?') for token in value.split('|')))
                 if len(value) == 1:
-                    dfSTlist = dfSTlist.loc[dfSTlist[key] == int(value[0])]
+                    dfSTlist = dfSTlist.loc[dfSTlist[key] == value[0]]
                 else:
                     return '-'
             else:
-                dfSTlist = dfSTlist.loc[dfSTlist[key] == int(value)]
+                dfSTlist = dfSTlist.loc[dfSTlist[key] == str(value).strip('~?')]
         if len(dfSTlist) == 1:
             return dfSTlist
         elif len(dfSTlist) == 0:

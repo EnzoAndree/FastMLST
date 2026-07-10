@@ -748,6 +748,13 @@ def download_scheme_data(items):
             progress.update(1)
             progress.set_postfix_str(f'{bytes_downloaded / (1024 * 1024):.2f} MiB')
             loci_names.append(locus_name)
+        if loci_without_fasta:
+            msg = (
+                f'Incomplete allele FASTA download for scheme {label} ({codename}). '
+                f'{loci_without_fasta} of {len(item.get("loci") or [])} locus/loci had no '
+                'alleles_fasta URL (often fixed with PubMLST OAuth).'
+            )
+            raise RuntimeError(msg)
         if not loci_names:
             msg = (
                 f'No allele FASTA could be downloaded for scheme {label} ({codename}). '

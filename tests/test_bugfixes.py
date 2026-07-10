@@ -5,6 +5,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from fastmlst import cli
 from fastmlst.cli import resolve_update_selectors_arg
 from fastmlst.cli import safe_reset_database
 from fastmlst import mlst as mlst_module
@@ -22,9 +23,32 @@ class TestMlstBugFixes(unittest.TestCase):
         self.assertTrue(MLST.allele_number_matches("1", "1"))
         self.assertTrue(MLST.allele_number_matches("1", "~1"))
         self.assertTrue(MLST.allele_number_matches("1", "1?"))
+        self.assertTrue(MLST.allele_number_matches("2.002", "2.002"))
+        self.assertTrue(MLST.allele_number_matches("2.002", "~2.002"))
         self.assertTrue(MLST.allele_number_matches("10", "1|10"))
         self.assertFalse(MLST.allele_number_matches("1", "10"))
         self.assertFalse(MLST.allele_number_matches("2", "12|20"))
+        self.assertFalse(MLST.allele_number_matches("2.002", "2"))
+
+    def test_blast_filter_preserves_decimal_allele_ids(self):
+        obj = MLST.__new__(MLST)
+        obj.coverage = 0.75
+        obj.identity = 0.95
+        obj.target_scheme = None
+        obj.beautiname = "sample.fa"
+        obj.fasta = "sample.fa"
+        obj.blastn_cli = "blastn"
+        obj.blastresult = True
+
+        blast_out = (
+            "testscheme.penA_2.002\t1749\tplus\t1\t1749\t1749\t1749\t0\t"
+            "contig1\t1\t1749\n"
+        )
+        result = obj.blast_filter(blast_out)
+
+        self.assertEqual(result["scheme"].values[0], "testscheme")
+        self.assertEqual(result["gene"].values[0], "penA")
+        self.assertEqual(result["number"].values[0], "2.002")
 
     def test_stassignment_returns_ambiguous_sentinel(self):
         tmpdir = tempfile.mkdtemp()
@@ -43,6 +67,30 @@ class TestMlstBugFixes(unittest.TestCase):
             obj.fasta = "sample.fna"
             result = obj.STassignment()
             self.assertEqual(result, "ambiguous_ST")
+        finally:
+            update_mlst_kit.set_pathdb(old_pathdb)
+            shutil.rmtree(tmpdir)
+
+    def test_stassignment_supports_decimal_allele_ids(self):
+        tmpdir = tempfile.mkdtemp()
+        old_pathdb = update_mlst_kit.pathdb
+        try:
+            scheme_dir = Path(tmpdir) / "schemes" / "testscheme"
+            scheme_dir.mkdir(parents=True, exist_ok=True)
+            profile = scheme_dir / "testscheme.txt"
+            profile.write_text("ST\tpenA\tmtrR\n7\t2.002\t42\n", encoding="utf-8")
+            update_mlst_kit.set_pathdb(tmpdir)
+
+            obj = MLST.__new__(MLST)
+            obj.scheme = "testscheme"
+            obj.score = {"scheme": {"penA": "2.002", "mtrR": "42"}}
+            obj.blastn_cli = "blastn"
+            obj.fasta = "sample.fna"
+            result = obj.STassignment()
+
+            self.assertFalse(isinstance(result, str))
+            self.assertEqual(str(result.index.values[0]), "7")
+            self.assertEqual(result["penA"].values[0], "2.002")
         finally:
             update_mlst_kit.set_pathdb(old_pathdb)
             shutil.rmtree(tmpdir)
@@ -119,6 +167,61 @@ class TestCliSafetyFixes(unittest.TestCase):
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+    def test_safe_reset_database_allows_catalog_only_directory(self):
+        tmpdir = tempfile.mkdtemp()
+        try:
+            p = Path(tmpdir) / "pubmlst"
+            p.mkdir(parents=True, exist_ok=True)
+            (p / update_mlst_kit.SCHEME_CATALOG_FILE).write_text(
+                '[{"codename": "x"}]', encoding="utf-8"
+            )
+            (p / update_mlst_kit.SCHEME_CATALOG_META_FILE).write_text(
+                '{"count": 1}', encoding="utf-8"
+            )
+            safe_reset_database(p, DummyLogger())
+            self.assertTrue(p.is_dir())
+            self.assertTrue((p / update_mlst_kit.SCHEME_CATALOG_FILE).is_file())
+            self.assertTrue((p / update_mlst_kit.SCHEME_CATALOG_META_FILE).is_file())
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_scheme_list_uses_cached_catalog_without_oauth_session(self):
+        tmpdir = tempfile.mkdtemp()
+        old_pathdb = update_mlst_kit.pathdb
+        old_credentials = update_mlst_kit._oauth_credentials
+        try:
+            root = Path(tmpdir)
+            update_mlst_kit.pathdb = root
+            (root / update_mlst_kit.SCHEME_CATALOG_FILE).write_text(
+                '[{"codename": "cached", "database": "db", "scheme_id": 1, '
+                '"species": "sp", "description": "MLST"}]',
+                encoding="utf-8",
+            )
+            (root / update_mlst_kit.SCHEME_CATALOG_META_FILE).write_text(
+                '{"updated_at": "2026-04-09T16:44:59+00:00", "count": 1}',
+                encoding="utf-8",
+            )
+            argv = ["fastmlst", "--scheme-list"]
+            with patch("sys.argv", argv):
+                with patch.object(
+                    update_mlst_kit,
+                    "load_pubmlst_client_credentials",
+                    return_value=("client", "secret"),
+                ):
+                    with patch.object(
+                        update_mlst_kit,
+                        "_build_authenticated_session",
+                        side_effect=AssertionError("OAuth should not be used"),
+                    ):
+                        with patch("sys.stdout", StringIO()) as out:
+                            with self.assertRaises(SystemExit):
+                                cli.main()
+            self.assertIn("cached", out.getvalue())
+        finally:
+            update_mlst_kit.pathdb = old_pathdb
+            update_mlst_kit._oauth_credentials = old_credentials
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
     def test_table_output_uses_given_handle_for_dataframe_mode(self):
         table_buf = StringIO()
         df = __import__('pandas').DataFrame([{'Genome': 'g1', 'ST': 1}])
@@ -163,6 +266,44 @@ class TestDownloadSchemeDataHandling(unittest.TestCase):
                     'fetch_json',
                     return_value={'id': 'adk', 'alleles_fasta': None},
                 ):
+                    ok, *_r = update_mlst_kit.download_scheme_data((item, None))
+            self.assertFalse(ok)
+            scheme_dir = Path(tmpdir) / 'schemes' / item['codename']
+            self.assertFalse(scheme_dir.is_dir())
+        finally:
+            update_mlst_kit.pathdb = old_pathdb
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_download_scheme_data_partial_missing_alleles_fails(self):
+        tmpdir = tempfile.mkdtemp()
+        old_pathdb = update_mlst_kit.pathdb
+        try:
+            update_mlst_kit.pathdb = Path(tmpdir)
+            item = {
+                'codename': 'pubmlst_partial_seqdef_1',
+                'database': 'pubmlst_partial_seqdef',
+                'scheme_id': 1,
+                'profiles_csv': 'http://example.invalid/profiles',
+                'loci': [
+                    'https://rest.pubmlst.org/db/pubmlst_partial_seqdef/loci/adk',
+                    'https://rest.pubmlst.org/db/pubmlst_partial_seqdef/loci/glyA',
+                ],
+                'description': 'test',
+                'remote_version': {'records': 1, 'locus_count': 2},
+            }
+
+            def fake_fetch_json(url, session=None):
+                if url.endswith('/adk'):
+                    return {'id': 'adk', 'alleles_fasta': 'http://example.invalid/adk.tfa'}
+                return {'id': 'glyA', 'alleles_fasta': None}
+
+            def fake_fetch_text(url, content_type='text/plain', session=None):
+                if url.endswith('adk.tfa'):
+                    return '>1\nAT\n'
+                return 'ST\tadk\tglyA\n1\t1\t1\n'
+
+            with patch.object(update_mlst_kit, 'fetch_text', side_effect=fake_fetch_text):
+                with patch.object(update_mlst_kit, 'fetch_json', side_effect=fake_fetch_json):
                     ok, *_r = update_mlst_kit.download_scheme_data((item, None))
             self.assertFalse(ok)
             scheme_dir = Path(tmpdir) / 'schemes' / item['codename']

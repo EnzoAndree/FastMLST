@@ -66,7 +66,16 @@ def safe_reset_database(db_path, logger):
     if db_path == Path('/'):
         raise RuntimeError('Refusing to remove root directory "/"')
 
-    markers = {'dbases.xml', 'schemes', 'mlst.fasta', 'mlst.fasta.nhr', 'mlst.fasta.nsq', 'mlst.fasta.nin'}
+    markers = {
+        'dbases.xml',
+        'schemes',
+        'mlst.fasta',
+        'mlst.fasta.nhr',
+        'mlst.fasta.nsq',
+        'mlst.fasta.nin',
+        update_mlst_kit.SCHEME_CATALOG_FILE,
+        update_mlst_kit.SCHEME_CATALOG_META_FILE,
+    }
     current_entries = {p.name for p in db_path.iterdir()}
     is_empty = len(current_entries) == 0
     has_markers = bool(current_entries.intersection(markers))
@@ -217,7 +226,10 @@ def main():
         or scheme_list_refresh
         or args.list_remote_schemes
     ):
-        session = update_mlst_kit._build_authenticated_session()
+        has_cached_catalog = update_mlst_kit.load_scheme_catalog() is not None
+        session = None
+        if scheme_list_refresh or not has_cached_catalog:
+            session = update_mlst_kit._build_authenticated_session()
         catalog, from_cache, used_live_api = update_mlst_kit.get_remote_scheme_catalog(
             session=session,
             force_refresh=scheme_list_refresh,
